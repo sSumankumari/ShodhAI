@@ -48,10 +48,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const autoplayInterval = setInterval(() => {
         currentSlide = (currentSlide + 1) % totalSlides;
         updateSlider();
-    }, 5000); // Change slide every 5 seconds
+    }, 7000); // Change slide every 7 seconds (increased to give more reading time)
     
-    // Pause autoplay on hover (optional)
+    // Pause autoplay on hover
     slidesContainer.addEventListener("mouseenter", () => {
         clearInterval(autoplayInterval);
+    });
+    
+    // Handle keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') {
+            currentSlide = (currentSlide + 1) % totalSlides;
+            updateSlider();
+        } else if (e.key === 'ArrowLeft') {
+            currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+            updateSlider();
+        }
     });
 });
