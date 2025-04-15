@@ -19,6 +19,7 @@ body {
     overflow-x: hidden;
 }
 
+
 /* Section 1: Navigation Bar */
 .navbar {
     background-color: rgba(26, 54, 93, 0.9);
@@ -59,6 +60,65 @@ body {
 .nav-links a:hover {
     color: var(--light-blue);
 }
+
+/* Dropdown menu styling */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-toggle {
+    color: var(--text-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s;
+    cursor: pointer;
+}
+
+.dropdown-toggle:after {
+    content: "▼";
+    font-size: 0.7em;
+    margin-left: 5px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: rgba(26, 54, 93, 0.95);
+    min-width: 240px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    padding: 0.5rem 0;
+    z-index: 200;
+    display: none;
+    transition: all 0.3s ease;
+}
+
+.dropdown-menu a {
+    display: block;
+    padding: 0.8rem 1.5rem;
+    color: var(--text-color);
+    text-decoration: none;
+    transition: background-color 0.3s;
+}
+
+.dropdown-menu a:hover {
+    background-color: var(--accent-blue);
+    color: white;
+}
+
+/* Show dropdown on hover */
+.dropdown:hover .dropdown-menu {
+    display: block;
+}
+
+.dropdown:hover .dropdown-toggle {
+    color: var(--light-blue);
+}
+
 
 /* Section 2: Hero Section */
 .hero {
@@ -115,6 +175,7 @@ body {
 .cta-button:hover {
     background-color: var(--light-blue);
 }
+
 
 /* Section 3: Features Slider */
 .features-section {
@@ -278,6 +339,7 @@ body {
 .indicator.active {
     background-color: var(--light-blue);
 }
+
 
 /* Section 4: Footer */
 .footer {

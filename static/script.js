@@ -6,6 +6,24 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let currentSlide = 0;
     const totalSlides = document.querySelectorAll(".feature-card").length;
+
+    // For touch devices, toggle dropdown on click
+    const dropdownToggle = document.querySelector('.dropdown-toggle');
+    
+    if ('ontouchstart' in window) {
+        dropdownToggle.addEventListener('click', function(event) {
+            event.preventDefault();
+            const dropdownMenu = this.nextElementSibling;
+            dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.dropdown')) {
+                document.querySelector('.dropdown-menu').style.display = 'none';
+            }
+        });
+    }
     
     // Function to update the slider position
     function updateSlider() {
