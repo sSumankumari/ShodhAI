@@ -1,137 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ShodhAI - Intelligent Document Processing</title>
-    <link rel="stylesheet" href="..\static\styles.css">
-</head>
-<body>
+    <link rel="stylesheet" href="..\static\styles.css" />
+  </head>
+  <body>
     <!-- Section 1: Navigation Bar -->
     <nav class="navbar">
-        <div class="logo">
-            <span class="logo-icon">🔍</span>
-            ShodhAI
+      <div class="logo">
+        <span class="logo-icon">🔍</span>
+        ShodhAI
+      </div>
+      <div class="nav-links">
+        <a href="#">Home</a>
+        <div class="dropdown">
+          <a href="#" class="dropdown-toggle">Features</a>
+          <div class="dropdown-menu">
+            <a href="#">Document Plagiarism Check</a>
+            <a href="#">Intelligent Document Classifier</a>
+            <a href="#">RAG-Based Chatbot for PDFs</a>
+            <a href="#">OCR Text Extractor</a>
+            <a href="#">YouTube Transcript Analyzer</a>
+          </div>
         </div>
-        <div class="nav-links">
-            <a href="#">Home</a>
-            <div class="dropdown">
-                <a href="#" class="dropdown-toggle">Features</a>
-                <div class="dropdown-menu">
-                    <a href="#">Document Plagiarism Check</a>
-                    <a href="#">Intelligent Document Classifier</a>
-                    <a href="#">RAG-Based Chatbot for PDFs</a>
-                    <a href="#">OCR Text Extractor</a>
-                    <a href="#">YouTube Transcript Analyzer</a>
-                </div>
-            </div>
-            <a href="#">About</a>
-            <a href="#">Contact</a>
-        </div>
+        <a href="#">About</a>
+        <a href="#">Contact</a>
+      </div>
     </nav>
 
     <!-- Section 2: Hero Section -->
     <section id="About" class="hero">
-        <h1>ShodhAI</h1>
-        <p>AI-Powered Intelligent Document &amp; Multimedia Processing Platform</p>
-        <div class="hero-description">
-            <p>In today's fast-paced digital world, handling and analyzing an ever-growing volume of textual and multimedia data is a critical challenge. <em>ShodhAI</em> is an all-in-one AI-powered platform designed to intelligently process documents and multimedia content. It transforms the way individuals and organizations interact with data—by automating content classification, originality verification, and knowledge extraction, while also providing seamless AI-powered interaction with the content itself.</p>
-            <p>Leveraging cutting-edge technologies such as Natural Language Processing (NLP), Optical Character Recognition (OCR), and Retrieval-Augmented Generation (RAG), ShodhAI ensures efficient, accurate, and intelligent document handling. Whether you're a student working on academic papers, a legal/financial professional reviewing client documents, or a content creator analyzing multimedia, ShodhAI serves as your smart assistant in information processing and decision-making.</p>
-        </div>
-        <button class="cta-button">Get Started</button>
+      <h1>ShodhAI</h1>
+      <p>AI-Powered Intelligent Document &amp; Multimedia Processing Platform</p>
+      <div class="hero-description">
+        <p>
+          In today's fast-paced digital world, handling and analyzing an ever-growing volume of textual and multimedia data is a critical challenge. <em>ShodhAI</em> is an all-in-one AI-powered platform designed to intelligently process documents and multimedia content. It transforms the way individuals and organizations interact with data—by automating content classification, originality verification, and knowledge extraction, while also providing seamless AI-powered interaction with the content itself.
+        </p>
+        <p>Leveraging cutting-edge technologies such as Natural Language Processing (NLP), Optical Character Recognition (OCR), and Retrieval-Augmented Generation (RAG), ShodhAI ensures efficient, accurate, and intelligent document handling. Whether you're a student working on academic papers, a legal/financial professional reviewing client documents, or a content creator analyzing multimedia, ShodhAI serves as your smart assistant in information processing and decision-making.</p>
+      </div>
+      <button class="cta-button">Get Started</button>
     </section>
 
     <!-- Section 3: Features Slider -->
     <section id="Features" class="features-section">
-        <h2>Key Features of ShodhAI</h2>
-        <div class="features-slider">
-            <div class="slider-arrows">
-                <button class="slide-arrow" id="slide-arrow-prev">←</button>
-                <button class="slide-arrow" id="slide-arrow-next">→</button>
-            </div>
-            
-            <div class="slides-container" id="slides">
-                <div class="feature-card">
-                    <div class="feature-header">
-                        <div class="feature-icon">🔐</div>
-                        <h3>Document Plagiarism Check</h3>
-                    </div>
-                    <div class="feature-content">
-                        <p>ShodhAI provides a robust plagiarism detection system tailored for academic, corporate, and legal document validation. Once a directory is uploaded, the system parses and processes every PDF, extracting textual data and computing similarity scores across all documents using a hybrid set of algorithms.</p>
-                        <p>These include <strong>Cosine Similarity</strong> for semantic overlap, <strong>Jaccard Index</strong> for set-based comparison, <strong>Longest Common Subsequence (LCS)</strong> for sequence alignment, and <strong>Locality Sensitive Hashing (LSH)</strong> for fast, approximate matching at scale.</p>
-                        <p>The n-gram-based segmentation further increases precision in identifying copied content. This feature is a must-have for universities, research bodies, publishers, and compliance teams aiming to uphold intellectual integrity and detect subtle content re-use or paraphrasing that traditional tools might miss.</p>
-                    </div>
-                    <a href="#" class="learn-more">Learn More →</a>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-header">
-                        <div class="feature-icon">📂</div>
-                        <h3>Intelligent Document Classifier</h3>
-                    </div>
-                    <div class="feature-content">
-                        <p>Manual classification of documents is time-consuming, error-prone, and inefficient. ShodhAI addresses this with an AI-driven classifier trained using thousands of domain-specific documents.</p>
-                        <p>The system uses <strong>spaCy</strong> NLP pipelines and advanced feature extraction to classify PDFs into <strong>Legal</strong>, <strong>Healthcare</strong>, and <strong>Financial</strong> categories. It analyzes structural patterns, key phrases, and domain-specific language to determine the correct category.</p>
-                        <p>This smart classification system enables quick document sorting and tagging, saving time for lawyers, doctors, accountants, and analysts who routinely deal with diverse document sets. It's an ideal solution for knowledge management systems and intelligent digital filing.</p>
-                    </div>
-                    <a href="#" class="learn-more">Learn More →</a>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-header">
-                        <div class="feature-icon">🤖</div>
-                        <h3>RAG-Based Chatbot for PDFs</h3>
-                    </div>
-                    <div class="feature-content">
-                        <p>Forget the hassle of reading lengthy PDFs. With ShodhAI, just upload your document and get a <strong>chatbot interface generated in seconds</strong>, powered by <strong>Retrieval-Augmented Generation (RAG)</strong>.</p>
-                        <p>It converts document content into embeddings using Sentence Transformers, stores them using <strong>FAISS</strong>, and dynamically fetches relevant content in response to user queries. The answers are generated with contextual relevance using powerful language models like <strong>LLaMA 3</strong>, ensuring accuracy, coherence, and fluid interaction.</p>
-                        <p>This feature empowers users to ask natural language questions and get instant answers from complex reports, legal cases, medical guidelines, or technical documentation—perfect for students, professionals, and corporate teams looking for instant insights.</p>
-                    </div>
-                    <a href="#" class="learn-more">Learn More →</a>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-header">
-                        <div class="feature-icon">🖼️</div>
-                        <h3>High-Precision OCR Text Extractor</h3>
-                    </div>
-                    <div class="feature-content">
-                        <p>ShodhAI features an advanced <strong>Optical Character Recognition (OCR)</strong> module that extracts text from images, scanned documents, and handwritten notes.</p>
-                        <p>Built using <strong>Tesseract OCR</strong> enhanced with preprocessing techniques (binarization, noise removal, skew correction), it ensures accurate and clean text extraction even from low-quality images. The extracted content is downloadable and editable, streamlining workflows that require digitization of offline content.</p>
-                        <p>Ideal for researchers digitizing old manuscripts, businesses automating form entry, or students copying textbook excerpts, this tool ensures that no valuable content remains locked in image formats.</p>
-                    </div>
-                    <a href="#" class="learn-more">Learn More →</a>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-header">
-                        <div class="feature-icon">🎥</div>
-                        <h3>YouTube Transcript Analyzer &amp; QnA Bot</h3>
-                    </div>
-                    <div class="feature-content">
-                        <p>Transform passive video consumption into interactive learning. ShodhAI allows users to input a <strong>YouTube video URL</strong>, automatically extract the video transcript via the YouTube API, and then generate an interactive chatbot that enables <strong>Q&A</strong> on the video content.</p>
-                        <p>Whether it's a lecture, seminar, or interview, the transcript is chunked and embedded for semantic search, allowing contextual responses to queries.</p>
-                        <p>This feature is revolutionary for educators, learners, and researchers. It allows summarization, comprehension checks, and exploration of video content without watching the entire video—saving time and enhancing knowledge retention.</p>
-                    </div>
-                    <a href="#" class="learn-more">Learn More →</a>
-                </div>
-            </div>
-            
-            <div class="slide-indicators">
-                <span class="indicator active" data-index="0"></span>
-                <span class="indicator" data-index="1"></span>
-                <span class="indicator" data-index="2"></span>
-                <span class="indicator" data-index="3"></span>
-                <span class="indicator" data-index="4"></span>
-            </div>
+      <h2>Key Features of ShodhAI</h2>
+      <div class="features-slider">
+        <div class="slider-arrows">
+          <button class="slide-arrow" id="slide-arrow-prev">←</button>
+          <button class="slide-arrow" id="slide-arrow-next">→</button>
         </div>
+
+        <div class="slides-container" id="slides">
+          <div class="feature-card">
+            <div class="feature-header">
+              <div class="feature-icon">🔐</div>
+              <h3>Document Plagiarism Check</h3>
+            </div>
+            <div class="feature-content">
+              <p>ShodhAI is an all-in-one AI solution that streamlines how you interact with documents and multimedia. Using advanced NLP, OCR, and RAG technologies, it intelligently processes content to save you time and enhance productivity.</p>
+              <p>Whether you need to verify document originality, classify content, extract key information, or have natural conversations with your PDFs and videos, ShodhAI delivers powerful tools for students, professionals, and content creators.</p>
+            </div>
+            <a href="#" class="learn-more">Learn More →</a>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-header">
+              <div class="feature-icon">📂</div>
+              <h3>Intelligent Document Classifier</h3>
+            </div>
+            <div class="feature-content">
+              <p>Manual classification of documents is time-consuming, error-prone, and inefficient. ShodhAI addresses this with an AI-driven classifier trained using thousands of domain-specific documents.</p>
+              <p>
+                The system uses <strong>spaCy</strong> NLP pipelines and advanced feature extraction to classify PDFs into <strong>Legal</strong>, <strong>Healthcare</strong>, and <strong>Financial</strong> categories. It analyzes structural patterns, key phrases, and domain-specific language to determine the correct category.
+              </p>
+              <p>This smart classification system enables quick document sorting and tagging, saving time for lawyers, doctors, accountants, and analysts who routinely deal with diverse document sets. It's an ideal solution for knowledge management systems and intelligent digital filing.</p>
+            </div>
+            <a href="#" class="learn-more">Learn More →</a>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-header">
+              <div class="feature-icon">🤖</div>
+              <h3>RAG-Based Chatbot for PDFs</h3>
+            </div>
+            <div class="feature-content">
+              <p>
+                Forget the hassle of reading lengthy PDFs. With ShodhAI, just upload your document and get a <strong>chatbot interface generated in seconds</strong>, powered by <strong>Retrieval-Augmented Generation (RAG)</strong>.
+              </p>
+              <p>
+                It converts document content into embeddings using Sentence Transformers, stores them using <strong>FAISS</strong>, and dynamically fetches relevant content in response to user queries. The answers are generated with contextual relevance using powerful language models like <strong>LLaMA 3</strong>, ensuring accuracy, coherence, and fluid interaction.
+              </p>
+              <p>This feature empowers users to ask natural language questions and get instant answers from complex reports, legal cases, medical guidelines, or technical documentation—perfect for students, professionals, and corporate teams looking for instant insights.</p>
+            </div>
+            <a href="#" class="learn-more">Learn More →</a>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-header">
+              <div class="feature-icon">🖼️</div>
+              <h3>High-Precision OCR Text Extractor</h3>
+            </div>
+            <div class="feature-content">
+              <p>
+                ShodhAI features an advanced <strong>Optical Character Recognition (OCR)</strong> module that extracts text from images, scanned documents, and handwritten notes.
+              </p>
+              <p>
+                Built using <strong>Tesseract OCR</strong> enhanced with preprocessing techniques (binarization, noise removal, skew correction), it ensures accurate and clean text extraction even from low-quality images. The extracted content is downloadable and editable, streamlining workflows that require digitization of offline content.
+              </p>
+              <p>Ideal for researchers digitizing old manuscripts, businesses automating form entry, or students copying textbook excerpts, this tool ensures that no valuable content remains locked in image formats.</p>
+            </div>
+            <a href="#" class="learn-more">Learn More →</a>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-header">
+              <div class="feature-icon">🎥</div>
+              <h3>YouTube Transcript Analyzer &amp; QnA Bot</h3>
+            </div>
+            <div class="feature-content">
+              <p>
+                Transform passive video consumption into interactive learning. ShodhAI allows users to input a <strong>YouTube video URL</strong>, automatically extract the video transcript via the YouTube API, and then generate an interactive chatbot that enables <strong>Q&A</strong> on the video content.
+              </p>
+              <p>Whether it's a lecture, seminar, or interview, the transcript is chunked and embedded for semantic search, allowing contextual responses to queries.</p>
+              <p>This feature is revolutionary for educators, learners, and researchers. It allows summarization, comprehension checks, and exploration of video content without watching the entire video—saving time and enhancing knowledge retention.</p>
+            </div>
+            <a href="#" class="learn-more">Learn More →</a>
+          </div>
+        </div>
+
+        <div class="slide-indicators">
+          <span class="indicator active" data-index="0"></span>
+          <span class="indicator" data-index="1"></span>
+          <span class="indicator" data-index="2"></span>
+          <span class="indicator" data-index="3"></span>
+          <span class="indicator" data-index="4"></span>
+        </div>
+      </div>
     </section>
 
     <!-- Section 4: Footer -->
     <footer class="footer">
-        <p>© 2025 ShodhAI. All rights reserved.</p>
+      <p>© 2025 ShodhAI. All rights reserved.</p>
     </footer>
 
     <script src="..\static\script.js"></script>
-</body>
+  </body>
 </html>
