@@ -1,0 +1,1 @@
+# OCR logic for image text extraction
