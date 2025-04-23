@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocSimilarity - PDF Comparison Tool</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navbar -->
+    <nav class="bg-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="logo text-xl text-blue-700">DocSimilarity<span class="text-gray-500 text-sm ml-1">Beta</span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Upload Section -->
+        <div class="bg-white shadow-md rounded-lg p-6 mb-8">
+            <div id="uploadContainer" class="upload-container rounded-lg p-8 text-center">
+                <div class="mb-4">
+                    <!-- SVG Upload Icon -->
+                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <p class="mt-2 text-sm text-gray-600">Drag and drop PDF files here or click to select</p>
+                    <p class="mt-1 text-xs text-gray-500">Select multiple PDFs for comparison</p>
+                </div>
+
+                <div id="fileListContainer" class="file-list mb-4 hidden">
+                    <div class="text-left text-sm font-medium text-gray-700 mb-2">Selected Files:</div>
+                    <div id="fileList" class="text-left"></div>
+                </div>
+
+                <input id="pdfInput" type="file" multiple accept="application/pdf" class="hidden" />
+                <div class="flex justify-center gap-4">
+                    <button id="uploadBtn" class="btn-blue">Select PDFs</button>
+                    <button id="scanBtn" disabled class="btn-green-disabled">Scan PDFs</button>
+                </div>
+            </div>
+
+            <!-- Processing Loader -->
+            <div id="processingLoader" class="hidden flex flex-col items-center justify-center mt-4">
+                <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4"></div>
+                <h2 class="text-center text-gray-600 text-xl font-semibold">Processing...</h2>
+                <p class="w-full text-center text-gray-500">This may take a while depending on the number of documents</p>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="hidden">
+            <div class="bg-white shadow-md rounded-lg p-6 mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">Similarity Analysis Results</h2>
+                    <button id="chatWithPdfBtn" class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition">Chat with PDF</button>
+                </div>
+                <div id="filesSummary" class="mb-4 text-sm text-gray-600"></div>
+                <div class="table-container">
+                    <table id="resultsTable" class="min-w-full bg-white border border-gray-200">
+                        <thead>
+                            <tr>
+                                <th class="border-b">Doc 1</th>
+                                <th class="border-b">Doc 2</th>
+                                <th class="border-b">Cosine_TFIDF (%)</th>
+                                <th class="border-b">Cosine_Count (%)</th>
+                                <th class="border-b">Jaccard (%)</th>
+                                <th class="border-b">LCS (%)</th>
+                                <th class="border-b">LSH (%)</th>
+                                <th class="border-b">NGram (%)</th>
+                                <th class="border-b">Average (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsBody"></tbody>
+                    </table>
+                </div>
+                <div class="flex mt-4 justify-end space-x-4">
+                    <button id="csvDownloadBtn" class="btn-green">Download CSV</button>
+                    <button id="htmlDownloadBtn" class="btn-purple">Download HTML Report</button>
+                </div>
+            </div>
+
+            <!-- Metrics Table -->
+            <div class="bg-white shadow-md rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">Similarity Metrics Explained</h2>
+                <table class="metric-table min-w-full bg-white border border-gray-200">
+                    <thead>
+                        <tr>
+                            <th class="w-1/4 border-b">Metric</th>
+                            <th class="w-3/4 border-b">Explanation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="border-b font-medium">Cosine TF-IDF</td><td class="border-b">Measures similarity by treating documents as vectors...</td></tr>
+                        <tr><td class="border-b font-medium">Cosine Count</td><td class="border-b">Similar to Cosine TF-IDF but uses raw word counts...</td></tr>
+                        <tr><td class="border-b font-medium">Jaccard</td><td class="border-b">Compares the shared words between documents...</td></tr>
+                        <tr><td class="border-b font-medium">LCS (Longest Common Subsequence)</td><td class="border-b">Finds the longest sequence of words that appear...</td></tr>
+                        <tr><td class="border-b font-medium">LSH (Locality Sensitive Hashing)</td><td class="border-b">Uses hashing to quickly identify similar...</td></tr>
+                        <tr><td class="border-b font-medium">NGram</td><td class="border-b">Compares sequences of consecutive words...</td></tr>
+                        <tr><td class="font-medium">Average Similarity</td><td>The mean of all similarity metrics...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
