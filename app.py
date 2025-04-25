@@ -1,100 +1,30 @@
-from flask import Flask, render_template, request
-import os
-from werkzeug.utils import secure_filename
+from flask import Flask, render_template
+from flask_cors import CORS
+from modules.plagiarism_checker.routes import plagiarism_bp
+from modules.rag_pdf_chatbot import rag_pdf_chatbot_bp
+from modules.webURL_analyzer import web_url_analyzer_bp
+from modules.youtube_analyzer.routes import youtube_bp
+from modules.ocr_extractor.routes import ocr_bp
 
-# Importing feature modules
-from modules import (
-    plagiarism_checker,
-    classifier,
-    rag_chatbot,
-    ocr_extractor,
-    youtube_analyzer,
-    webURL_analyzer
-)
-
+# Initialize Flask app
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+CORS(app)
 
-# ---------------------- ROUTES ----------------------
+# Set max upload size
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max upload size
 
+# Register blueprints for different modules
+app.register_blueprint(plagiarism_bp)
+app.register_blueprint(rag_pdf_chatbot_bp, url_prefix='/rag-pdf-chatbot')
+app.register_blueprint(web_url_analyzer_bp, url_prefix='/weburl')
+app.register_blueprint(youtube_bp, url_prefix='/youtube')
+app.register_blueprint(ocr_bp, url_prefix='/ocr')
+
+# Home route to render the index page
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return render_template('index.html')  # Refers to the index HTML page you shared
 
-# === Plagiarism Checker ===
-@app.route('/plagiarism_checker', methods=['GET', 'POST'])
-def plagiarism_check():
-    if request.method == 'POST':
-        file = request.files['document']
-        if file:
-            filename = secure_filename(file.filename)
-            path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(path)
-            result = plagiarism_checker.check(path)
-            return render_template('plagiarism_checker.html', result=result)
-    return render_template('plagiarism_checker.html')
-
-# === Document Classifier ===
-@app.route('/classifier', methods=['GET', 'POST'])
-def document_classifier():
-    if request.method == 'POST':
-        file = request.files['document']
-        if file:
-            filename = secure_filename(file.filename)
-            path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(path)
-            result = classifier.classify(path)
-            return render_template('classifier.html', result=result)
-    return render_template('classifier.html')
-
-# === RAG Chatbot ===
-@app.route('/rag_chatbot', methods=['GET', 'POST'])
-def rag_pdf_chat():
-    if request.method == 'POST':
-        file = request.files['document']
-        query = request.form.get('query', '')
-        if file and query:
-            filename = secure_filename(file.filename)
-            path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(path)
-            response = rag_chatbot.query_pdf(path, query)
-            return render_template('rag_chatbot.html', response=response, query=query)
-    return render_template('rag_chatbot.html')
-
-# === OCR Extractor ===
-@app.route('/ocr_extractor', methods=['GET', 'POST'])
-def ocr_extract():
-    if request.method == 'POST':
-        image = request.files['image']
-        if image:
-            filename = secure_filename(image.filename)
-            path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            image.save(path)
-            extracted_text = ocr_extractor.extract_text(path)
-            return render_template('ocr_extractor.html', text=extracted_text)
-    return render_template('ocr_extractor.html')
-
-# === YouTube Transcript Analyzer ===
-@app.route('/YTtranscript_analyzer', methods=['GET', 'POST'])
-def youtube_transcript():
-    if request.method == 'POST':
-        url = request.form['video_url']
-        query = request.form.get('query', '')
-        transcript, summary, answer = youtube_analyzer.analyze_video(url, query)
-        return render_template('YTtranscript_analyzer.html', transcript=transcript, summary=summary, answer=answer)
-    return render_template('YTtranscript_analyzer.html')
-
-# === Web URL Analyzer ===
-@app.route('/webURL_analyzer', methods=['GET', 'POST'])
-def weburl_analyze():
-    if request.method == 'POST':
-        url = request.form['web_url']
-        query = request.form.get('query', '')
-        content, summary, answer = weburl_analyzer.analyze(url, query)
-        return render_template('webURL_analyzer.html', content=content, summary=summary, answer=answer)
-    return render_template('webURL_analyzer.html')
-
-# ---------------------- MAIN ----------------------
+# Run the Flask app
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
