@@ -1,9 +1,9 @@
 # Transcript + QnA logic for YouTube videos
 
 from flask import Flask, request, jsonify, render_template, send_from_directory
-from utils.transcript_extractor.extract_transcript import get_transcript, get_transcript_with_timestamps
+from modules.youtube_analyzer.transcript_extractor.extract_transcript import get_transcript, get_transcript_with_timestamps
 from dotenv import load_dotenv
-from utils.transcriptQA.groqllm import ask_groq
+from modules.youtube_analyzer.transcriptQA.groqllm import ask_groq
 from groq import Groq
 import os
 
