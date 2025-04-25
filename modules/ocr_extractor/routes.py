@@ -5,7 +5,7 @@ import os
 from config import UPLOAD_FOLDER, TEMP_FOLDER, ALLOWED_EXTENSIONS
 from utils import allowed_file, process_image, create_text_file, create_pdf_file, create_docx_file
 
-ocr_bp = Blueprint('ocr', __name__, template_folder='templates')
+ocr_bp = Blueprint('ocr_extractor', __name__, template_folder='templates')
 
 @ocr_bp.route('/', methods=['GET', 'POST'])
 def index():

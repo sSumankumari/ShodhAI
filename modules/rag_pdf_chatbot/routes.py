@@ -5,7 +5,7 @@ import google.generativeai as genai
 
 @rag_pdf_chatbot_bp.route('/')
 def index():
-    return render_template('templates/index.html')
+    return render_template('index.html')
 
 @rag_pdf_chatbot_bp.route('/generate', methods=['POST'])
 def generate():

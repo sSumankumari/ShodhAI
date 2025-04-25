@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, render_template, send_from_direct
 from utils import handle_transcript_extraction, handle_question
 import os
 
-youtube_bp = Blueprint('youtube', __name__, template_folder='templates', static_folder='static')
+youtube_bp = Blueprint('YTtranscript_analyzer', __name__, template_folder='templates', static_folder='static')
 
 @youtube_bp.route('/')
 def index():
