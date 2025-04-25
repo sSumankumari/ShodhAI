@@ -115,7 +115,7 @@ def ask_question():
     question = data.get('question')
 
     if not question:
-        return jsonify({'success': False, 'error': 'No question provided'})
+        return jsonify({'suc  cess': False, 'error': 'No question provided'})
 
     # Load transcript dynamically from file OR from request
     transcript_text = data.get('transcript')
