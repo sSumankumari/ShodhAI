@@ -8,11 +8,11 @@ from flask import Flask, render_template, request, jsonify, send_file
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from PyPDF2 import PdfReader
-from utils.plag.cosine_similarity import cosine_similarity_count, cosine_similarity_tfidf
-from utils.plag.jaccard_similarity import jaccard_similarity
-from utils.plag.lcs import lcs
-from utils.plag.lsh import lsh_similarity
-from utils.plag.n_gram_similarity import n_gram_similarity
+from modules.plagiarism_checker.plag.cosine_similarity import cosine_similarity_count, cosine_similarity_tfidf
+from modules.plagiarism_checker.plag.jaccard_similarity import jaccard_similarity
+from modules.plagiarism_checker.plag.lcs import lcs
+from modules.plagiarism_checker.plag.lsh import lsh_similarity
+from modules.plagiarism_checker.plag.n_gram_similarity import n_gram_similarity
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 import tempfile
