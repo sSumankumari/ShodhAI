@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Prashna Bot</title>
-    <link rel="stylesheet" href="../static/webURL_analyzer.css">
+    <link rel="stylesheet" href="{{ url_for('webURL_analyzer.static', filename='webURL_analyzer.css') }}">
 </head>
 <body>
     <div class="container" id="app">
@@ -70,6 +70,6 @@
         </div>
     </div>
 
-    <script src="../static/webURL_analyzer.js"></script>
+    <script src="{{ url_for('webURL_analyzer.static', filename='webURL_analyzer.js') }}"></script>
 </body>
 </html>

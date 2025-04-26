@@ -5,9 +5,16 @@ import os
 from .config import UPLOAD_FOLDER, TEMP_FOLDER, ALLOWED_EXTENSIONS
 from .utils import allowed_file, process_image, create_text_file, create_pdf_file, create_docx_file
 
-ocr_bp = Blueprint('ocr_extractor', __name__, template_folder='templates')
+ocr_extractor_bp = Blueprint(
+    'ocr_extractor',
+    __name__,
+    template_folder='templates',
+    static_folder='static',
+    static_url_path='/ocr/static'
+)
 
-@ocr_bp.route('/', methods=['GET', 'POST'])
+
+@ocr_extractor_bp.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         if 'image' not in request.files:
@@ -22,6 +29,9 @@ def index():
             filepath = os.path.join(UPLOAD_FOLDER, filename)
 
             try:
+                # Ensure directory exists
+                os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
                 file.save(filepath)
                 extracted_text = process_image(filepath)
                 os.remove(filepath)
@@ -41,7 +51,7 @@ def index():
     return render_template('ocr_extractor.html')
 
 
-@ocr_bp.route('/download', methods=['POST'])
+@ocr_extractor_bp.route('/download', methods=['POST'])
 def download():
     text = request.form.get('text')
     format_type = request.form.get('format')
@@ -55,6 +65,9 @@ def download():
     output_path = os.path.join(TEMP_FOLDER, filename)
 
     try:
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
         if format_type == 'txt':
             create_text_file(text, output_path)
         elif format_type == 'pdf':
@@ -74,6 +87,6 @@ def download():
         return f'Error creating file: {str(e)}', 500
 
 
-@ocr_bp.app_errorhandler(413)
+@ocr_extractor_bp.errorhandler(413)
 def too_large(e):
     return 'File is too large', 413

@@ -6,7 +6,13 @@ import csv
 import io
 from datetime import datetime
 
-plagiarism_bp = Blueprint('plagiarism', __name__, template_folder='templates')
+plagiarism_bp = Blueprint(
+    'plagiarism_checker',
+    __name__,
+    template_folder='templates',
+    static_folder='static',
+    static_url_path='/plagiarism/static'
+)
 
 @plagiarism_bp.route('/')
 def index():

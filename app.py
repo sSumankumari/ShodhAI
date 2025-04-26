@@ -4,7 +4,7 @@ from modules.plagiarism_checker.routes import plagiarism_bp
 from modules.rag_pdf_chatbot.routes import rag_pdf_chatbot_bp
 from modules.webURL_analyzer.routes import web_url_analyzer_bp
 from modules.youtube_analyzer.routes import youtube_bp
-from modules.ocr_extractor.routes import ocr_bp
+from modules.ocr_extractor.routes import ocr_extractor_bp
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -22,7 +22,7 @@ app.register_blueprint(plagiarism_bp, url_prefix='/plagiarism')
 app.register_blueprint(rag_pdf_chatbot_bp, url_prefix='/rag-pdf')
 app.register_blueprint(web_url_analyzer_bp, url_prefix='/weburl')
 app.register_blueprint(youtube_bp, url_prefix='/yt-transcript')
-app.register_blueprint(ocr_bp, url_prefix='/ocr')
+app.register_blueprint(ocr_extractor_bp, url_prefix='/ocr')
 
 # Home route to render the index page
 @app.route('/')
