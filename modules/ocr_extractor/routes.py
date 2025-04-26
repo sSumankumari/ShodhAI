@@ -2,8 +2,8 @@ from flask import Blueprint, render_template, request, send_file, current_app
 from werkzeug.utils import secure_filename
 import os
 
-from config import UPLOAD_FOLDER, TEMP_FOLDER, ALLOWED_EXTENSIONS
-from utils import allowed_file, process_image, create_text_file, create_pdf_file, create_docx_file
+from .config import UPLOAD_FOLDER, TEMP_FOLDER, ALLOWED_EXTENSIONS
+from .utils import allowed_file, process_image, create_text_file, create_pdf_file, create_docx_file
 
 ocr_bp = Blueprint('ocr_extractor', __name__, template_folder='templates')
 
@@ -38,7 +38,7 @@ def index():
 
         return 'Invalid file type', 400
 
-    return render_template('index.html')
+    return render_template('ocr_extractor.html')
 
 
 @ocr_bp.route('/download', methods=['POST'])

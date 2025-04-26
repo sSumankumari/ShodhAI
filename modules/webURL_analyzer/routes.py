@@ -1,7 +1,7 @@
 from flask import render_template, request, jsonify, send_file
 from . import web_url_analyzer_bp
-from utils import extract_content, ask_groq
-from config import CONTENT_FILE, HISTORY_FILE, CONTENT_DIR
+from .utils import extract_content, ask_groq
+from .config import CONTENT_FILE, HISTORY_FILE, CONTENT_DIR
 import os
 import json
 from dotenv import load_dotenv
@@ -14,7 +14,7 @@ history = {}
 
 @web_url_analyzer_bp.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('webURL_analyzer.html')
 
 
 @web_url_analyzer_bp.route('/extract', methods=['POST'])

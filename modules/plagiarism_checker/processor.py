@@ -4,12 +4,12 @@ import shutil
 import numpy as np
 from werkzeug.utils import secure_filename
 from concurrent.futures import ThreadPoolExecutor
-from utils import read_pdf_text
-from plag.cosine_similarity import cosine_similarity_count, cosine_similarity_tfidf
-from plag.jaccard_similarity import jaccard_similarity
-from plag.lcs import lcs
-from plag.lsh import lsh_similarity
-from plag.n_gram_similarity import n_gram_similarity
+from .utils import read_pdf_text
+from .plag.cosine_similarity import cosine_similarity_count, cosine_similarity_tfidf
+from .plag.jaccard_similarity import jaccard_similarity
+from .plag.lcs import lcs
+from .plag.lsh import lsh_similarity
+from .plag.n_gram_similarity import n_gram_similarity
 
 similarity_functions = {
     "Cosine_TFIDF": cosine_similarity_tfidf,

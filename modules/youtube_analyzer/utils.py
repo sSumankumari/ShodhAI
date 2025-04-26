@@ -1,8 +1,8 @@
 import os
-from transcript_extractor.extract_transcript import get_transcript, get_transcript_with_timestamps
-from transcriptQA.groqllm import ask_groq
+from .transcript_extractor.extract_transcript import get_transcript, get_transcript_with_timestamps
+from .transcriptQA.groqllm import ask_groq
 from groq import Groq
-from config import TRANSCRIPT_FILE, TIMESTAMP_FILE, GROQ_API_KEY
+from .config import TRANSCRIPT_FILE, TIMESTAMP_FILE, GROQ_API_KEY
 
 client = Groq(api_key=GROQ_API_KEY)
 

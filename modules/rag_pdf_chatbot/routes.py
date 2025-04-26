@@ -1,11 +1,11 @@
 from flask import request, jsonify, render_template, send_from_directory
 from . import rag_pdf_chatbot_bp
-from utils import to_markdown
+from .utils import to_markdown
 import google.generativeai as genai
 
 @rag_pdf_chatbot_bp.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('rag_pdf_chatbot.html')
 
 @rag_pdf_chatbot_bp.route('/generate', methods=['POST'])
 def generate():

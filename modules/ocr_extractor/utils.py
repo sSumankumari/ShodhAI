@@ -1,8 +1,8 @@
 import os
-from python_scripts.ocr import extract_text
-from python_scripts.spelling_corrections import correct_spelling
-from python_scripts.spacings import add_space_after_punctuation
-from python_scripts.groqllm import clean_text
+from .python_scripts.ocr import extract_text
+from .python_scripts.spelling_corrections import correct_spelling
+from .python_scripts.spacings import add_space_after_punctuation
+from .python_scripts.groqllm import clean_text
 from fpdf import FPDF
 from docx import Document
 

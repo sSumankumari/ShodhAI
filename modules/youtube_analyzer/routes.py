@@ -1,12 +1,12 @@
 from flask import Blueprint, request, jsonify, render_template, send_from_directory
-from utils import handle_transcript_extraction, handle_question
+from .utils import handle_transcript_extraction, handle_question
 import os
 
-youtube_bp = Blueprint('YTtranscript_analyzer', __name__, template_folder='templates', static_folder='static')
+youtube_bp = Blueprint('youtube_analyzer', __name__, template_folder='templates', static_folder='static')
 
 @youtube_bp.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('YTtranscript_analyzer.html')
 
 @youtube_bp.route('/api/extract-transcript', methods=['POST'])
 def extract_transcript():

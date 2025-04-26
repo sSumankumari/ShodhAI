@@ -1,16 +1,16 @@
 from flask import Blueprint, request, jsonify, send_file, render_template
-from processor import process_uploaded_pdfs, compare_pdfs
-from report_generator import generate_html_report
+from .processor import process_uploaded_pdfs, compare_pdfs
+from .report_generator import generate_html_report
 import tempfile
 import csv
 import io
 from datetime import datetime
 
-plagiarism_bp = Blueprint('plagiarism_checker', __name__, template_folder='templates')
+plagiarism_bp = Blueprint('plagiarism', __name__, template_folder='templates')
 
 @plagiarism_bp.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('plagiarism_checker.html')
 
 @plagiarism_bp.route('/api/process', methods=['POST'])
 def process_pdfs():

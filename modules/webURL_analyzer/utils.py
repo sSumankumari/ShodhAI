@@ -2,7 +2,7 @@ import os
 import json
 import requests
 from bs4 import BeautifulSoup
-from config import CONTENT_FILE, CONTENT_DIR, HISTORY_FILE
+from .config import CONTENT_FILE, CONTENT_DIR, HISTORY_FILE
 
 def extract_content(url):
     headers = {
