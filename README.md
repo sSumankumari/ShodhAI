@@ -64,7 +64,7 @@ ShodhAI/
 ├── static/                      # Global static assets
 │   ├── script.js                # Main JavaScript file
 │   └── styles.css               # Main CSS stylesheet
-││
+│
 ├── templates/                   # HTML templates
 │   └── index.html               # Main application template
 │
