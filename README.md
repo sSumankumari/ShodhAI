@@ -1,78 +1,15 @@
-# ShodhAI
+# ShodhAI - The Unified AI Platform for Interactive Learning and Content Analysis
+ShodhAI is a comprehensive AI-powered research and document analysis platform that helps researchers, students, and professionals process, analyze, and extract insights from various types of documents and content.
 
-## Project Structure
+## 🌟 Features
+- **YouTube Transcript Analyzer & QnA Bot**: Turn any YouTube video into an interactive learning experience. Extract transcripts and ask questions about video content through our AI assistant.
 
-```
-ShodhAI/
-├── modules/
-│   └── classifier/              # Text classification module
-│       ├── templates/
-│       ├── __init__.py
-│       ├── config.py
-│       ├── routes.py            # API endpoints for classification
-│       └── utils.py             # Helper functions for classifier
-│
-|   ├── ocr_extractor/               # OCR functionality for text extraction
-│       ├── python_scripts/
-│       ├── static/
-│       ├── temp_files/              # Temporary storage for OCR processing
-│       ├── templates/
-│       ├── uploads/                 # Storage for uploaded documents
-│       ├── __init__.py
-│       ├── config.py
-│       ├── routes.py                # API endpoints for OCR extraction
-│       └── utils.py
-│
-|   ├── plagiarism_checker/          # Module for checking document similarity
-│       ├── plag/
-│       ├── static/
-│       ├── templates/
-│       ├── __init__.py
-│       ├── processor.py             # Core plagiarism detection logic
-│       ├── report_generator.py      # Generates similarity reports
-│       ├── routes.py                # API endpoints for plagiarism checking
-│       └── utils.py
-│
-|   ├── rag_pdf_chatbot/             # Retrieval-Augmented Generation PDF chatbot
-│       ├── static/
-│       ├── templates/
-│       ├── __init__.py
-│       ├── config.py
-│       ├── routes.py                # API endpoints for PDF chatbot
-│       └── utils.py
-│
-|   ├── webURL_analyzer/             # Tool for analyzing web content
-│       ├── static/
-│       ├── templates/
-│       ├── __init__.py
-│       ├── config.py
-│       ├── routes.py                # API endpoints for URL analysis
-│       └── utils.py
-│
-|   ├── youtube_analyzer/            # YouTube content analysis module
-│       ├── static/
-│       ├── temp_files/              # Temporary storage for media files
-│       ├── templates/
-│       ├── transcript_extractor/    # Extracts transcripts from videos
-│       ├── transcriptQA/            # Q&A functionality for video transcripts
-│       ├── __init__.py
-│       ├── config.py
-│       ├── routes.py                # API endpoints for YouTube analysis
-│       └── utils.py
-│
-│
-├── static/                      # Global static assets
-│   ├── script.js                # Main JavaScript file
-│   └── styles.css               # Main CSS stylesheet
-│
-├── templates/                   # HTML templates
-│   └── index.html               # Main application template
-│
-├── venv/                        # Python virtual environment
-│
-├── .env                         # Environment variables
-├── .gitignore                   # Git ignore file
-├── app.py                       # Main application entry point
-├── README.md                    # Project documentation
-└── requirements.txt             # Python dependencies
-```
+- **Website URL Analyzer**: Analyze content from any website URL using our AI engine. Summarize, extract insights, detect sentiment, and interact with page content through intelligent QnA—all in one click.
+
+- **RAG-Based Chatbot for PDFs**: Upload any PDF and instantly generate an AI chatbot that understands your document. Ask questions and get accurate, context-aware answers in seconds.
+
+- **Document Similarity Check**: An advanced tool that detects content overlap, paraphrasing, and plagiarism across academic or professional documents. Upload files and receive detailed similarity reports in seconds with precision accuracy.
+
+- **High-Precision OCR Text Extractor**: Extract text from images with exceptional accuracy. Copy the extracted content or download it instantly in your preferred format for easy use.
+
+Each feature is designed to be fast, accurate, and easy to use—turning digital resources into dynamic, interactive tools.
