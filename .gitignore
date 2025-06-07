@@ -1,4 +1,7 @@
+.idea/
 .env
+venv/
 
-temp_static/
-modules_part/
+temp_files/
+uploads/
+content/

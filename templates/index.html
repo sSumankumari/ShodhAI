@@ -1,104 +1,346 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ShodhAI - Intelligent Document Processing</title>
-    <link rel="stylesheet" href="../static/styles.css" />
-  </head>
-  <body>
-    <!-- Section 1: Navigation Bar -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../static/styles.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
     <nav class="navbar">
-      <div class="logo">
-        <span class="logo-icon">🔍</span>
-        ShodhAI
-      </div>
-      <div class="nav-links">
-        <a href="#">Home</a>
-        <div class="dropdown">
-          <a href="#" class="dropdown-toggle">Features</a>
-          <div class="dropdown-menu">
-            <a href="/plagiarism/">Document Plagiarism Check</a>
-            <!-- <a href="/classifier/">Intelligent Document Classifier</a> -->
-            <a href="/rag-pdf/">RAG-Based Chatbot for PDFs</a>
-            <a href="/ocr/">OCR Text Extractor</a>
-            <a href="/yt-transcript/">YouTube Transcript Analyzer</a>
-            <a href="/weburl/">Website URL Analyzer</a>
-          </div>
+        <div class="logo">
+            <span class="logo-icon">🔍</span>
+            ShodhAI
         </div>
-        <a href="#">About</a>
-        <a href="#">Contact</a>
-      </div>
+        <div class="nav-links">
+            <a href="#home" onclick="showSection('home')">Home</a>
+            <div class="dropdown">
+                <a href="#" class="dropdown-toggle">Features</a>
+                <div class="dropdown-menu">
+                    <a href="#plagiarism" onclick="showSection('plagiarism')">Document Similarity Check</a>
+                    <a href="#rag-pdf" onclick="showSection('rag-pdf')">RAG-Based PDF Chatbot</a>
+                    <a href="#ocr" onclick="showSection('ocr')">OCR Text Extractor</a>
+                    <a href="#youtube" onclick="showSection('youtube')">YouTube Transcript Analyzer</a>
+                    <a href="#weburl" onclick="showSection('weburl')">Website URL Analyzer</a>
+                </div>
+            </div>
+            <a href="#about">About</a>
+            <a href="#contact">Contact</a>
+        </div>
     </nav>
 
-    <!-- Section 2: Hero Section -->
-    <section id="About" class="hero">
-      <h1>ShodhAI</h1>
-      <p class="hero-tagline">Transform document chaos into intelligent workflows</p>
-      <p class="hero-subtitle">The all-in-one AI platform that revolutionizes how you process, analyze, and interact with documents and multimedia content</p>
-      <div class="hero-features">
-        <span>🔍 Instant Plagiarism Check</span>
-        <span>📂 Smart Classification</span>
-        <span>🤖 PDF Chat Interface</span>
-      </div>
-      <button class="cta-button" onclick="window.location.href='#Features'">Explore the Platform</button>
-    </section>
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Home Section -->
+        <section id="home" class="section active">
+            <!-- Hero Section -->
+            <div class="hero">
+                <h1>ShodhAI</h1>
+                <p class="hero-tagline">Transform document chaos into intelligent workflows</p>
+                <p class="hero-subtitle">The all-in-one AI platform that revolutionizes how you process, analyze, and interact with documents and multimedia content</p>
+                <div class="hero-features">
+                    <span>🔍 Instant Similarity Check</span>
+                    <span>📂 Smart Classification</span>
+                    <span>🤖 PDF Chat Interface</span>
+                </div>
+                <button class="cta-button" onclick="document.getElementById('features').scrollIntoView()">Explore the Platform</button>
+            </div>
 
-    <!-- Section 3: Features Grid -->
-    <section id="Features" class="features-section">
-      <h2>Key Features of ShodhAI</h2>
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-icon">🔐</div>
-          <h3>Document Plagiarism Check</h3>
-          <p>Advanced multimodal plagiarism detection using AI to ensure content originality across text, visual, and audio formats. Get instant similarity reports with precision accuracy.</p>
-          <a href="/plagiarism/" class="learn-more">Explore Feature →</a>
-        </div>
+            <!-- Features Grid -->
+            <div id="features" class="features-section">
+                <h2>Key Features of ShodhAI</h2>
+                <div class="features-grid">
+                    <div class="feature-card" onclick="showSection('plagiarism')">
+                        <div class="feature-icon">🔐</div>
+                        <h3>Document Similarity Check</h3>
+                        <p>Advanced multimodal plagiarism detection using AI to ensure content originality across text, visual, and audio formats. Get instant similarity reports with precision accuracy.</p>
+                        <a href="#" class="learn-more">Explore Feature →</a>
+                    </div>
 
-        <!--
-        <div class="feature-card">
-          <div class="feature-icon">📂</div>
-          <h3>Intelligent Document Classifier</h3>
-          <p>AI-driven classification system that automatically categorizes documents into legal, healthcare, and financial categories using advanced NLP and pattern recognition.</p>
-          <a href="/classifier/" class="learn-more">Explore Feature →</a>
-        </div>
-        -->
+                    <div class="feature-card" onclick="showSection('rag-pdf')">
+                        <div class="feature-icon">🤖</div>
+                        <h3>RAG-Based Chatbot for PDFs</h3>
+                        <p>Upload any PDF and instantly generate an AI chatbot that understands your document. Ask questions and get accurate, context-aware answers in seconds.</p>
+                        <a href="#" class="learn-more">Explore Feature →</a>
+                    </div>
 
-        <div class="feature-card">
-          <div class="feature-icon">🤖</div>
-          <h3>RAG-Based Chatbot for PDFs</h3>
-          <p>Upload any PDF and instantly generate an AI chatbot that understands your document. Ask questions and get accurate, context-aware answers in seconds.</p>
-          <a href="/rag-pdf/" class="learn-more">Explore Feature →</a>
-        </div>
+                    <div class="feature-card" onclick="showSection('ocr')">
+                        <div class="feature-icon">🖼️</div>
+                        <h3>High-Precision OCR Text Extractor</h3>
+                        <p>Extract text from images, scanned documents, and handwritten notes with exceptional accuracy. Download clean, editable text ready for processing.</p>
+                        <a href="#" class="learn-more">Explore Feature →</a>
+                    </div>
 
-        <div class="feature-card">
-          <div class="feature-icon">🖼️</div>
-          <h3>High-Precision OCR Text Extractor</h3>
-          <p>Extract text from images, scanned documents, and handwritten notes with exceptional accuracy. Download clean, editable text ready for processing.</p>
-          <a href="/ocr/" class="learn-more">Explore Feature →</a>
-        </div>
+                    <div class="feature-card" onclick="showSection('youtube')">
+                        <div class="feature-icon">🎥</div>
+                        <h3>YouTube Transcript Analyzer & QnA Bot</h3>
+                        <p>Turn any YouTube video into an interactive learning experience. Extract transcripts and ask questions about video content through our AI assistant.</p>
+                        <a href="#" class="learn-more">Explore Feature →</a>
+                    </div>
 
-        <div class="feature-card">
-          <div class="feature-icon">🎥</div>
-          <h3>YouTube Transcript Analyzer &amp; QnA Bot</h3>
-          <p>Turn any YouTube video into an interactive learning experience. Extract transcripts and ask questions about video content through our AI assistant.</p>
-          <a href="/yt-transcript/" class="learn-more">Explore Feature →</a>
-        </div>
+                    <div class="feature-card" onclick="showSection('weburl')">
+                        <div class="feature-icon">🌐</div>
+                        <h3>Website URL Analyzer</h3>
+                        <p>Analyze content from any website URL using our AI engine. Summarize, extract insights, detect sentiment, and interact with page content through intelligent QnA—all in one click.</p>
+                        <a href="#" class="learn-more">Explore Feature →</a>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-        <div class="feature-card">
-          <div class="feature-icon">🌐</div>
-          <h3>Website URL Analyzer</h3>
-          <p>Analyze content from any website URL using our AI engine. Summarize, extract insights, detect sentiment, and interact with page content through intelligent QnA—all in one click.</p>
-          <a href="/weburl/" class="learn-more">Explore Feature →</a>
-        </div>
-      </div>
-    </section>
+        <!-- Document Similarity Check Section -->
+        <section id="plagiarism" class="section">
+            <div class="section-header">
+                <button class="back-button" onclick="showSection('home')">← Back to Home</button>
+                <h1>Document Similarity Check</h1>
+            </div>
+            
+            <div class="content-container">
+                <div class="upload-section">
+                    <div id="plagiarism-upload" class="upload-container">
+                        <div class="upload-icon">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <p>Drag and drop PDF files here or click to select</p>
+                            <p class="upload-subtitle">Select multiple PDFs for comparison</p>
+                        </div>
+                        <input id="plagiarism-input" type="file" multiple accept="application/pdf" style="display: none;" />
+                        <div id="plagiarism-file-list" class="file-list hidden"></div>
+                        <div class="upload-buttons">
+                            <button id="plagiarism-select-btn" class="btn-primary">Select PDFs</button>
+                            <button id="plagiarism-scan-btn" class="btn-secondary" disabled>Scan PDFs</button>
+                        </div>
+                        <div id="plagiarism-loader" class="loader hidden">
+                            <div class="spinner"></div>
+                            <p>Processing documents...</p>
+                        </div>
+                    </div>
+                    
+                    <div id="plagiarism-results" class="results-container hidden">
+                        <h3>Similarity Analysis Results</h3>
+                        <div id="plagiarism-table-container"></div>
+                        <div class="results-actions">
+                            <button id="plagiarism-download-csv" class="btn-success">Download CSV</button>
+                            <button id="plagiarism-download-html" class="btn-info">Download HTML Report</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <!-- Section 4: Footer -->
+        <!-- RAG PDF Chatbot Section -->
+        <section id="rag-pdf" class="section">
+            <div class="section-header">
+                <button class="back-button" onclick="showSection('home')">← Back to Home</button>
+                <h1>RAG-Based PDF Chatbot</h1>
+            </div>
+            
+            <div class="content-container">
+                <div class="pdf-chat-container">
+                    <div class="pdf-upload-area">
+                        <h3>Upload PDF Document</h3>
+                        <div id="pdf-upload" class="upload-zone">
+                            <i class="fas fa-file-pdf"></i>
+                            <p>Click or drag PDF here</p>
+                            <input type="file" id="pdf-input" accept="application/pdf" style="display: none;">
+                        </div>
+                        <div id="pdf-loader" class="loader hidden">
+                            <div class="spinner"></div>
+                            <p>Processing PDF...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-area">
+                        <div id="pdf-chat-messages" class="chat-messages">
+                            <div class="message bot">
+                                <p>Upload a PDF document to start chatting with it!</p>
+                            </div>
+                        </div>
+                        <div class="chat-input-container">
+                            <input type="text" id="pdf-chat-input" placeholder="Ask a question about your PDF...">
+                            <button id="pdf-send-btn"><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- OCR Text Extractor Section -->
+        <section id="ocr" class="section">
+            <div class="section-header">
+                <button class="back-button" onclick="showSection('home')">← Back to Home</button>
+                <h1>OCR Text Extractor</h1>
+            </div>
+            
+            <div class="content-container">
+                <div class="ocr-container">
+                    <div class="ocr-upload-panel">
+                        <h3>Upload Image</h3>
+                        <div id="ocr-upload-area" class="upload-zone">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Click or drag image here</p>
+                            <input type="file" id="ocr-input" accept="image/*" style="display: none;">
+                        </div>
+                        <img id="ocr-preview" class="image-preview hidden">
+                        <div id="ocr-loader" class="loader hidden">
+                            <div class="spinner"></div>
+                            <p>Extracting text...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="ocr-output-panel">
+                        <div class="panel-header">
+                            <h3>Extracted Text</h3>
+                            <button id="ocr-copy-btn" class="btn-secondary">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <div id="ocr-output" class="text-output"></div>
+                        <div class="ocr-controls">
+                            <select id="ocr-format">
+                                <option value="txt">Text File (.txt)</option>
+                                <option value="pdf">PDF File (.pdf)</option>
+                                <option value="docx">Word Document (.docx)</option>
+                            </select>
+                            <button id="ocr-download-btn" class="btn-primary">
+                                <i class="fas fa-download"></i> Download
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- YouTube Transcript Analyzer Section -->
+        <section id="youtube" class="section">
+            <div class="section-header">
+                <button class="back-button" onclick="showSection('home')">← Back to Home</button>
+                <h1>YouTube Transcript Analyzer</h1>
+            </div>
+            
+            <div class="content-container">
+                <div class="youtube-container">
+                    <div class="youtube-sidebar">
+                        <div class="sidebar-header">
+                            <h3>Chat History</h3>
+                            <button id="youtube-new-chat" class="btn-small">
+                                <i class="fas fa-plus"></i> New Chat
+                            </button>
+                        </div>
+                        <div id="youtube-history" class="history-list"></div>
+                    </div>
+                    
+                    <div class="youtube-chat-area">
+                        <div class="chat-header">
+                            <h3 id="youtube-chat-title">New Chat</h3>
+                            <button id="youtube-show-transcript" class="btn-secondary">
+                                <i class="fas fa-file-alt"></i> Show Transcript
+                            </button>
+                        </div>
+                        <div id="youtube-chat-messages" class="chat-messages">
+                            <div class="message bot">
+                                <p>Hi! Send me a YouTube URL to extract transcripts and start asking questions!</p>
+                            </div>
+                        </div>
+                        <div class="chat-input-container">
+                            <input type="text" id="youtube-input" placeholder="Enter YouTube URL or ask a question...">
+                            <button id="youtube-send-btn"><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Transcript Modal -->
+            <div id="youtube-transcript-modal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Video Transcript</h3>
+                        <span class="modal-close">&times;</span>
+                    </div>
+                    <div id="youtube-transcript-content" class="modal-body">
+                        <p>No transcript available yet. Please send a YouTube URL first.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Website URL Analyzer Section -->
+        <section id="weburl" class="section">
+            <div class="section-header">
+                <button class="back-button" onclick="showSection('home')">← Back to Home</button>
+                <h1>Website URL Analyzer</h1>
+            </div>
+            
+            <div class="content-container">
+                <div class="weburl-container">
+                    <div class="weburl-sidebar">
+                        <div class="sidebar-header">
+                            <h3>History</h3>
+                            <button id="weburl-new-chat" class="btn-small">
+                                <i class="fas fa-plus"></i> New Chat
+                            </button>
+                        </div>
+                        <div id="weburl-history" class="history-list"></div>
+                    </div>
+                    
+                    <div class="weburl-main-area">
+                        <div class="weburl-header">
+                            <button id="weburl-show-content" class="btn-secondary">
+                                <i class="fas fa-globe"></i> Website Content
+                            </button>
+                            <button id="weburl-theme-toggle" class="btn-secondary">
+                                <i class="fas fa-moon"></i> Dark Mode
+                            </button>
+                        </div>
+                        
+                        <div id="weburl-chat-messages" class="chat-messages">
+                            <div class="message bot">
+                                <p>Please enter any website link for asking questions related to it.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="chat-input-container">
+                            <input type="text" id="weburl-input" placeholder="Enter website URL or ask a question...">
+                            <button id="weburl-send-btn"><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Content Viewer Modal -->
+            <div id="weburl-content-modal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Website Content</h3>
+                        <div class="modal-actions">
+                            <button id="weburl-download-content" class="btn-small">Download</button>
+                            <span class="modal-close">&times;</span>
+                        </div>
+                    </div>
+                    <div id="weburl-content-display" class="modal-body"></div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
     <footer class="footer">
-      <p>© 2025 ShodhAI. All rights reserved.</p>
+        <p>&copy; 2025 ShodhAI. All rights reserved.</p>
     </footer>
 
+    <!-- Notification -->
+    <div id="notification" class="notification hidden">
+        <span id="notification-text"></span>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="../static/script.js"></script>
-  </body>
+</body>
 </html>
