@@ -1,47 +1,71 @@
-# RAG-based chatbot over PDFs
+import openai
+import PyPDF2
+import numpy as np
 
-from flask import Flask, request, jsonify, render_template, send_from_directory
-import google.generativeai as genai
-import textwrap
-import os
+# Configure your Groq API key
+GROQ_API_KEY = "YOUR_GROQ_API_KEY_HERE"
+openai.api_key = GROQ_API_KEY
+openai.api_base = "https://api.groq.com/openai/v1"  # Set to Groq endpoint
 
-app = Flask(__name__, template_folder='.', static_folder='.')
+def extract_pdf_text(pdf_file):
+    """Extracts all text from a PDF file-like object."""
+    try:
+        reader = PyPDF2.PdfReader(pdf_file)
+        text = ""
+        for page in reader.pages:
+            page_text = page.extract_text() or ""
+            text += page_text + "\n"
+        return text.strip()
+    except Exception as e:
+        raise ValueError(f"Failed to extract PDF: {e}")
 
-# Initialize Google Generative AI
-GOOGLE_API_KEY = 'YOUR API HERE'
-genai.configure(api_key=GOOGLE_API_KEY)
+def chunk_text(text, max_len=1500):
+    """Chunks text into pieces of max_len words for context windowing."""
+    words = text.split()
+    chunks = []
+    for i in range(0, len(words), max_len):
+        chunk = " ".join(words[i:i + max_len])
+        chunks.append(chunk)
+    return chunks
 
-# Define a function to convert the AI-generated content to Markdown format
-def to_markdown(parts):
-    formatted_parts = []
-    for part in parts:
-        text = part.text
-        # Replace markdown formatting in the text
-        text = text.replace('-', ' *')  # Example for bullets, adjust if needed
-        text = text.replace('* ', '*')  # Fix extra spaces around asterisks
-        text = text.replace('*', '**')
-        text = text.replace('**', '')
-        text = text.replace('***', ' ')
-        text = text.replace('*****', '\n')  # Use bold formatting for emphasis
-        formatted_parts.append(text)
-    return textwrap.indent('\n'.join(formatted_parts), '> ', predicate=lambda _: True)
+def build_context(chunks, question, max_chunks=3):
+    """Naive retrieval: Select the most relevant chunks for the question."""
+    # For production, use embedding search; here, use longest overlap as simple retrieval
+    ranked = sorted(chunks, key=lambda c: sum(1 for w in question.split() if w in c), reverse=True)
+    return "\n\n".join(ranked[:max_chunks])
 
-@app.route('/')
-def index():
-    return render_template('templates/index.html')
-
-@app.route('/generate', methods=['POST'])
-def generate():
-    prompt = request.form['prompt']
-    model = genai.GenerativeModel('gemini-pro')
-    response = model.generate_content(prompt)
-    content = to_markdown(response.parts)
-    return jsonify({'content': content})
-
-# Ensure that CSS and JS files are correctly served
-@app.route('/<path:filename>')
-def serve_static(filename):
-    return send_from_directory('.', filename)
-
-if __name__ == '__main__':
-    app.run(debug=True)
+def answer_from_pdf(pdf_file, question, temperature=0.0):
+    """
+    Answers a question based on the PDF content using Groq API.
+    Args:
+        pdf_file: File-like object for the PDF.
+        question: User's question as a string.
+        temperature: LLM temperature (float).
+    Returns:
+        str: Answer from the LLM.
+    """
+    try:
+        # Extract and chunk PDF text
+        pdf_text = extract_pdf_text(pdf_file)
+        if not pdf_text.strip():
+            return "The PDF appears to have no extractable text."
+        chunks = chunk_text(pdf_text)
+        context = build_context(chunks, question)
+        prompt = (
+            f"Use the following PDF content to answer the user's question.\n\n"
+            f"PDF Content:\n{context}\n\n"
+            f"Question: {question}\n"
+            f"Answer:"
+        )
+        # Call Groq/OpenAI LLM API
+        response = openai.ChatCompletion.create(
+            model="mixtral-8x7b-32768",  # Use your preferred Groq-supported model
+            messages=[{"role": "system", "content": "You are a helpful AI assistant."},
+                      {"role": "user", "content": prompt}],
+            temperature=temperature,
+            max_tokens=512,
+        )
+        answer = response['choices'][0]['message']['content']
+        return answer.strip()
+    except Exception as e:
+        return f"Error generating answer: {str(e)}"
