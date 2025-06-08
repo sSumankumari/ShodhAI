@@ -1,11 +1,11 @@
-import openai
+from groq import Groq
 import PyPDF2
 import numpy as np
+import os
 
 # Configure your Groq API key
-GROQ_API_KEY = "YOUR_GROQ_API_KEY_HERE"
-openai.api_key = GROQ_API_KEY
-openai.api_base = "https://api.groq.com/openai/v1"  # Set to Groq endpoint
+GROQ_API_KEY = os.getenv("GROQ_API_KEY") or "YOUR_GROQ_API_KEY_HERE"
+groq_client = Groq(api_key=GROQ_API_KEY)
 
 def extract_pdf_text(pdf_file):
     """Extracts all text from a PDF file-like object."""
@@ -30,7 +30,6 @@ def chunk_text(text, max_len=1500):
 
 def build_context(chunks, question, max_chunks=3):
     """Naive retrieval: Select the most relevant chunks for the question."""
-    # For production, use embedding search; here, use longest overlap as simple retrieval
     ranked = sorted(chunks, key=lambda c: sum(1 for w in question.split() if w in c), reverse=True)
     return "\n\n".join(ranked[:max_chunks])
 
@@ -57,15 +56,17 @@ def answer_from_pdf(pdf_file, question, temperature=0.0):
             f"Question: {question}\n"
             f"Answer:"
         )
-        # Call Groq/OpenAI LLM API
-        response = openai.ChatCompletion.create(
-            model="mixtral-8x7b-32768",  # Use your preferred Groq-supported model
-            messages=[{"role": "system", "content": "You are a helpful AI assistant."},
-                      {"role": "user", "content": prompt}],
+        # Call Groq LLM API (new OpenAI/Groq v1+ style)
+        response = groq_client.chat.completions.create(
+            model="mixtral-8x7b-32768",
+            messages=[
+                {"role": "system", "content": "You are a helpful AI assistant."},
+                {"role": "user", "content": prompt}
+            ],
             temperature=temperature,
             max_tokens=512,
         )
-        answer = response['choices'][0]['message']['content']
+        answer = response.choices[0].message.content
         return answer.strip()
     except Exception as e:
         return f"Error generating answer: {str(e)}"

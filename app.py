@@ -1,9 +1,11 @@
 from flask import (
-    Flask, render_template, request, jsonify, send_file, redirect, url_for
+    Flask, render_template, request, jsonify, send_file, redirect, url_for, make_response
 )
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 import os
+import io
+import tempfile
 
 # Load environment variables
 load_dotenv()
@@ -27,112 +29,174 @@ except ImportError:
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
-# ========== OCR ROUTES ==========
+# ========== API ROUTES FOR FRONTEND AJAX ==========
 
-@app.route('/ocr', methods=['GET', 'POST'])
-def ocr():
-    if request.method == 'POST':
-        file = request.files.get('image')
-        if not file or file.filename == '':
-            return render_template('ocr.html', error="No file selected.")
-        try:
-            file.stream.seek(0)
-            text = extract_text_from_file(file.stream)
-            return render_template('ocr.html', extracted_text=text)
-        except Exception as e:
-            return render_template('ocr.html', error=str(e))
-    return render_template('ocr.html')
+@app.route('/api/ocr', methods=['POST'])
+def api_ocr():
+    file = request.files.get('image')
+    if not file or file.filename == '':
+        return jsonify({'success': False, 'error': "No file selected."}), 400
+    try:
+        file.stream.seek(0)
+        text = extract_text_from_file(file.stream)
+        return jsonify({'success': True, 'extracted_text': text})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-# ========== PLAGIARISM CHECKER ROUTES ==========
+@app.route('/api/ocr/download', methods=['POST'])
+def api_ocr_download():
+    data = request.json
+    text = data.get('text', '')
+    fmt = data.get('format', 'txt')
+    filename = f"extracted_text.{fmt}"
+    try:
+        if fmt == 'txt':
+            output = io.BytesIO(text.encode('utf-8'))
+            return send_file(output, as_attachment=True, download_name=filename, mimetype='text/plain')
+        elif fmt == 'pdf':
+            from fpdf import FPDF
+            pdf = FPDF()
+            pdf.add_page()
+            pdf.set_auto_page_break(auto=True, margin=15)
+            pdf.set_font("Arial", size=12)
+            for line in text.split("\n"):
+                pdf.cell(0, 10, line, ln=True)
+            out = io.BytesIO()
+            pdf.output(out)
+            out.seek(0)
+            return send_file(out, as_attachment=True, download_name=filename, mimetype='application/pdf')
+        elif fmt == 'docx':
+            from docx import Document
+            doc = Document()
+            doc.add_paragraph(text)
+            out = io.BytesIO()
+            doc.save(out)
+            out.seek(0)
+            return send_file(out, as_attachment=True, download_name=filename, mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        else:
+            return jsonify({'success': False, 'error': "Invalid format"}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/plagiarism', methods=['GET', 'POST'])
-def plagiarism():
-    if request.method == 'POST':
-        files = request.files.getlist('files[]')
-        if len(files) < 2:
-            return render_template('plagiarism.html', error="Please upload at least 2 files.")
-        file_names = [f.filename for f in files]
-        try:
-            results = check_plagiarism_from_files(files, file_names)
-            return render_template('plagiarism.html', results=results, file_names=file_names)
-        except Exception as e:
-            return render_template('plagiarism.html', error=str(e))
-    return render_template('plagiarism.html')
+@app.route('/api/plagiarism', methods=['POST'])
+def api_plagiarism():
+    files = request.files.getlist('files[]')
+    if len(files) < 2:
+        return jsonify({'success': False, 'error': "Please upload at least 2 files."}), 400
+    file_names = [f.filename for f in files]
+    try:
+        results = check_plagiarism_from_files(files, file_names)
+        return jsonify({'success': True, 'results': results, 'file_names': file_names})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-# ========== RAG PDF CHATBOT ROUTES ==========
+@app.route('/api/plagiarism/download', methods=['POST'])
+def api_plagiarism_download():
+    data = request.json
+    table = data.get('table')
+    filename = data.get('filename', 'results.csv')
+    fmt = data.get('format', 'csv')
+    try:
+        if fmt == 'csv':
+            output = io.StringIO()
+            # The frontend should send CSV content as `table`
+            output.write(table)
+            output.seek(0)
+            return send_file(io.BytesIO(output.getvalue().encode('utf-8')), as_attachment=True, download_name=filename, mimetype='text/csv')
+        elif fmt == 'html':
+            # The frontend should send HTML table string as `table`
+            output = io.StringIO()
+            output.write(table)
+            output.seek(0)
+            return send_file(io.BytesIO(output.getvalue().encode('utf-8')), as_attachment=True, download_name=filename, mimetype='text/html')
+        else:
+            return jsonify({'success': False, 'error': "Invalid format"}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/rag_pdf', methods=['GET', 'POST'])
-def rag_pdf():
-    answer = None
-    if request.method == 'POST':
-        pdf = request.files.get('pdf')
-        question = request.form.get('question')
-        if not pdf or not question:
-            return render_template('rag_pdf.html', error="PDF and question required.")
-        try:
-            pdf.stream.seek(0)
-            answer = answer_from_pdf(pdf, question, temperature=0.2)
-        except Exception as e:
-            return render_template('rag_pdf.html', error=str(e))
-    return render_template('rag_pdf.html', answer=answer)
+@app.route('/api/rag_pdf/upload', methods=['POST'])
+def api_rag_pdf_upload():
+    pdf = request.files.get('pdf')
+    if not pdf:
+        return jsonify({'success': False, 'error': "PDF required."}), 400
+    # Store temporarily (simulate session, or return a temp token, or handle in memory)
+    try:
+        temp = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+        pdf.save(temp.name)
+        temp.close()
+        return jsonify({'success': True, 'temp_pdf': temp.name})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-# ========== WEB URL ANALYZER ROUTES ==========
+@app.route('/api/rag_pdf/ask', methods=['POST'])
+def api_rag_pdf_ask():
+    temp_pdf = request.form.get('temp_pdf')
+    question = request.form.get('question', '')
+    if not temp_pdf or not question:
+        return jsonify({'success': False, 'error': "PDF and question required."}), 400
+    try:
+        with open(temp_pdf, 'rb') as f:
+            answer = answer_from_pdf(f, question, temperature=0.2)
+        return jsonify({'success': True, 'answer': answer})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/web_analyze', methods=['GET', 'POST'])
-def weburl_analyze():
-    result = None
-    if request.method == 'POST':
-        url = request.form.get('url')
-        question = request.form.get('question')
-        if not url:
-            return render_template('web_analyze.html', error="URL required.")
-        try:
-            result = web_analyze(url, question, GROQ_API_KEY)
-        except Exception as e:
-            return render_template('web_analyze.html', error=str(e))
+@app.route('/api/web_analyze', methods=['POST'])
+def api_web_analyze():
+    data = request.json
+    url = data.get('url')
+    question = data.get('question', '')
+    if not url:
+        return jsonify({'success': False, 'error': "URL required."}), 400
+    try:
+        result = web_analyze(url, question, GROQ_API_KEY)
         if "error" in result:
-            return render_template('web_analyze.html', error=result["error"])
-    return render_template('web_analyze.html', result=result)
+            return jsonify({'success': False, 'error': result["error"]}), 400
+        return jsonify({'success': True, 'result': result})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-# ========== YOUTUBE ANALYZER ROUTES ==========
+@app.route('/api/youtube/extract', methods=['POST'])
+def api_youtube_extract():
+    data = request.json
+    youtube_url = data.get('url')
+    if not youtube_url:
+        return jsonify({'success': False, 'error': "YouTube URL required."}), 400
+    result = extract_and_save_transcript(youtube_url)
+    if result['success']:
+        return jsonify({'success': True, 'transcript': result['transcript']})
+    else:
+        return jsonify({'success': False, 'error': result['error']}), 400
 
-@app.route('/youtube', methods=['GET', 'POST'])
-def youtube_analyzer():
-    transcript = None
-    answer = None
-    summary = None
-    if request.method == 'POST':
-        action = request.form.get('action')
-        youtube_url = request.form.get('url')
-        question = request.form.get('question')
-        if action == 'extract':
-            result = extract_and_save_transcript(youtube_url)
-            if result['success']:
-                transcript = result['transcript']
-            else:
-                return render_template('youtube.html', error=result['error'])
-        if action == 'ask':
-            result = ask_question_over_transcript(question, client=groq_client)
-            if result['success']:
-                answer = result['answer']
-            else:
-                return render_template('youtube.html', error=result['error'])
-        if action == 'summarize':
-            transcript_text = request.form.get('transcript')
-            result = summarize_transcript(transcript_text, client=groq_client)
-            if result['success']:
-                summary = result['summary']
-            else:
-                return render_template('youtube.html', error=result['error'])
-    return render_template('youtube.html', transcript=transcript, answer=answer, summary=summary)
+@app.route('/api/youtube/ask', methods=['POST'])
+def api_youtube_ask():
+    data = request.json
+    question = data.get('question', '')
+    if not question:
+        return jsonify({'success': False, 'error': "Question required."}), 400
+    result = ask_question_over_transcript(question, client=groq_client)
+    if result['success']:
+        return jsonify({'success': True, 'answer': result['answer']})
+    else:
+        return jsonify({'success': False, 'error': result['error']}), 400
 
-# ========== HOME ==========
+@app.route('/api/youtube/summarize', methods=['POST'])
+def api_youtube_summarize():
+    data = request.json
+    transcript = data.get('transcript', '')
+    if not transcript:
+        return jsonify({'success': False, 'error': "Transcript required."}), 400
+    result = summarize_transcript(transcript, client=groq_client)
+    if result['success']:
+        return jsonify({'success': True, 'summary': result['summary']})
+    else:
+        return jsonify({'success': False, 'error': result['error']}), 400
+
+# ========== STATIC FILES AND MAIN ROUTES ==========
 
 @app.route('/')
 def home():
     return render_template('index.html')
-
-# ========== STATIC FILES ==========
 
 @app.route('/static/<path:filename>')
 def static_files(filename):

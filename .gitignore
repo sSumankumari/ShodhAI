@@ -11,3 +11,5 @@ venv/
 temp_files/
 uploads/
 content/
+
+test.py

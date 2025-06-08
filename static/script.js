@@ -3,14 +3,17 @@
 // ==========================================
 let currentSection = 'home';
 let chatHistories = {
-    youtube: [],
-    weburl: [],
-    pdf: []
+    youtube: {},
+    weburl: {},
+    pdf: {}
 };
 let currentTranscript = '';
 let currentWebsiteContent = '';
 let currentPDFContent = '';
 let isDarkMode = false;
+let currentYouTubeURL = '';
+let currentWebURL = '';
+let currentPDFFile = null;
 
 // ==========================================
 // UTILITY FUNCTIONS
@@ -19,13 +22,15 @@ function showNotification(message, type = 'success') {
     const notification = document.getElementById('notification');
     const notificationText = document.getElementById('notification-text');
     
-    notification.className = `notification ${type}`;
-    notificationText.textContent = message;
-    notification.classList.remove('hidden');
-    
-    setTimeout(() => {
-        notification.classList.add('hidden');
-    }, 3000);
+    if (notification && notificationText) {
+        notification.className = `notification ${type}`;
+        notificationText.textContent = message;
+        notification.classList.remove('hidden');
+        
+        setTimeout(() => {
+            notification.classList.add('hidden');
+        }, 3000);
+    }
 }
 
 function generateId() {
@@ -54,6 +59,16 @@ function copyToClipboard(text) {
     }).catch(() => {
         showNotification('Failed to copy text', 'error');
     });
+}
+
+function showLoader(loaderId) {
+    const loader = document.getElementById(loaderId);
+    if (loader) loader.classList.remove('hidden');
+}
+
+function hideLoader(loaderId) {
+    const loader = document.getElementById(loaderId);
+    if (loader) loader.classList.add('hidden');
 }
 
 // ==========================================
@@ -108,13 +123,15 @@ function initPlagiarismChecker() {
     const loader = document.getElementById('plagiarism-loader');
     const results = document.getElementById('plagiarism-results');
 
+    if (!uploadArea || !fileInput || !selectBtn || !scanBtn) return;
+
     let selectedFiles = [];
 
     // File selection handlers
     selectBtn.addEventListener('click', () => fileInput.click());
     
     fileInput.addEventListener('change', (e) => {
-        selectedFiles = Array.from(e.target.files);
+        selectedFiles = Array.from(e.target.files).filter(file => file.type === 'application/pdf');
         updateFileList();
     });
 
@@ -135,7 +152,7 @@ function initPlagiarismChecker() {
     });
 
     function updateFileList() {
-        if (selectedFiles.length > 0) {
+        if (fileList && selectedFiles.length > 0) {
             fileList.innerHTML = selectedFiles.map(file => 
                 `<div class="file-item">${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)</div>`
             ).join('');
@@ -143,7 +160,7 @@ function initPlagiarismChecker() {
             scanBtn.disabled = false;
             scanBtn.classList.remove('btn-secondary');
             scanBtn.classList.add('btn-primary');
-        } else {
+        } else if (fileList) {
             fileList.classList.add('hidden');
             scanBtn.disabled = true;
         }
@@ -155,129 +172,85 @@ function initPlagiarismChecker() {
             return;
         }
 
-        loader.classList.remove('hidden');
+        showLoader('plagiarism-loader');
         
         try {
-            // Simulate processing (replace with actual API call)
-            await simulateProcessing();
-            
-            // Generate mock results
-            const mockResults = generateMockSimilarityResults(selectedFiles);
-            displaySimilarityResults(mockResults);
-            
-            loader.classList.add('hidden');
+            const formData = new FormData();
+            selectedFiles.forEach(file => {
+                formData.append('files[]', file);
+            });
+
+            // ---- Updated: Use new API endpoint and JSON ----
+            const response = await fetch('/api/plagiarism', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (!data.success) {
+                throw new Error(data.error || 'Unknown error');
+            }
+
+            // Show results in table
+            const tableContainer = document.getElementById('plagiarism-table-container');
+            if (tableContainer) {
+                tableContainer.innerHTML = plagiarismResultsToHTMLTable(data.results, data.file_names);
+            }
             results.classList.remove('hidden');
-            
+            showNotification('Similarity analysis completed!', 'success');
+            setupPlagiarismDownloadHandlers(data.results, data.file_names);
         } catch (error) {
-            loader.classList.add('hidden');
-            showNotification('Error processing documents', 'error');
+            console.error('Error:', error);
+            showNotification('Error processing documents: ' + error.message, 'error');
+        } finally {
+            hideLoader('plagiarism-loader');
         }
     });
 
-    function generateMockSimilarityResults(files) {
-        const results = [];
-        for (let i = 0; i < files.length; i++) {
-            for (let j = i + 1; j < files.length; j++) {
-                results.push({
-                    doc1: files[i].name,
-                    doc2: files[j].name,
-                    cosine_tfidf: (Math.random() * 100).toFixed(2),
-                    cosine_count: (Math.random() * 100).toFixed(2),
-                    jaccard: (Math.random() * 100).toFixed(2),
-                    lcs: (Math.random() * 100).toFixed(2),
-                    lsh: (Math.random() * 100).toFixed(2),
-                    ngram: (Math.random() * 100).toFixed(2),
-                    average: (Math.random() * 100).toFixed(2)
+    function plagiarismResultsToHTMLTable(results, fileNames) {
+        // Assume results is a 2D array or similar structure
+        let html = '<table><thead><tr><th></th>';
+        fileNames.forEach(name => html += `<th>${name}</th>`);
+        html += '</tr></thead><tbody>';
+        results.forEach((row, i) => {
+            html += `<tr><th>${fileNames[i]}</th>`;
+            row.forEach(cell => html += `<td>${cell}</td>`);
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        return html;
+    }
+
+    function setupPlagiarismDownloadHandlers(results, fileNames) {
+        const csvBtn = document.getElementById('plagiarism-download-csv');
+        const htmlBtn = document.getElementById('plagiarism-download-html');
+        // Build CSV/HTML from results
+        if (csvBtn) {
+            csvBtn.onclick = () => {
+                let csv = [',' + fileNames.join(',')];
+                results.forEach((row, i) => {
+                    csv.push([fileNames[i], ...row].join(','));
                 });
-            }
+                downloadFile(csv.join('\n'), 'similarity_results.csv', 'text/csv');
+            };
         }
-        return results;
-    }
-
-    function displaySimilarityResults(results) {
-        const tableContainer = document.getElementById('plagiarism-table-container');
-        const table = `
-            <table class="min-w-full bg-white border border-gray-200">
-                <thead>
-                    <tr>
-                        <th class="border-b">Doc 1</th>
-                        <th class="border-b">Doc 2</th>
-                        <th class="border-b">Cosine_TFIDF (%)</th>
-                        <th class="border-b">Cosine_Count (%)</th>
-                        <th class="border-b">Jaccard (%)</th>
-                        <th class="border-b">LCS (%)</th>
-                        <th class="border-b">LSH (%)</th>
-                        <th class="border-b">NGram (%)</th>
-                        <th class="border-b">Average (%)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${results.map(row => `
-                        <tr>
-                            <td class="border-b">${row.doc1}</td>
-                            <td class="border-b">${row.doc2}</td>
-                            <td class="border-b">${row.cosine_tfidf}</td>
-                            <td class="border-b">${row.cosine_count}</td>
-                            <td class="border-b">${row.jaccard}</td>
-                            <td class="border-b">${row.lcs}</td>
-                            <td class="border-b">${row.lsh}</td>
-                            <td class="border-b">${row.ngram}</td>
-                            <td class="border-b">${row.average}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
-        tableContainer.innerHTML = table;
-
-        // Download handlers
-        document.getElementById('plagiarism-download-csv').addEventListener('click', () => {
-            const csv = convertToCSV(results);
-            downloadFile(csv, 'similarity_results.csv', 'text/csv');
-        });
-
-        document.getElementById('plagiarism-download-html').addEventListener('click', () => {
-            const html = generateHTMLReport(results);
-            downloadFile(html, 'similarity_report.html', 'text/html');
-        });
-    }
-
-    function convertToCSV(data) {
-        const headers = ['Doc 1', 'Doc 2', 'Cosine_TFIDF (%)', 'Cosine_Count (%)', 'Jaccard (%)', 'LCS (%)', 'LSH (%)', 'NGram (%)', 'Average (%)'];
-        const csvContent = [
-            headers.join(','),
-            ...data.map(row => [
-                row.doc1, row.doc2, row.cosine_tfidf, row.cosine_count,
-                row.jaccard, row.lcs, row.lsh, row.ngram, row.average
-            ].join(','))
-        ].join('\n');
-        return csvContent;
-    }
-
-    function generateHTMLReport(data) {
-        return `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Document Similarity Report</title>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 20px; }
-                    table { border-collapse: collapse; width: 100%; }
-                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                    th { background-color: #f2f2f2; }
-                </style>
-            </head>
-            <body>
-                <h1>Document Similarity Analysis Report</h1>
-                <p>Generated on: ${new Date().toLocaleString()}</p>
-                ${document.getElementById('plagiarism-table-container').innerHTML}
-            </body>
-            </html>
-        `;
-    }
-
-    async function simulateProcessing() {
-        return new Promise(resolve => setTimeout(resolve, 3000));
+        if (htmlBtn) {
+            htmlBtn.onclick = () => {
+                let html = plagiarismResultsToHTMLTable(results, fileNames);
+                let report = `
+                <!DOCTYPE html>
+                <html>
+                <head><title>Document Similarity Report</title></head>
+                <body>
+                  <h1>Document Similarity Analysis Report</h1>
+                  <p>Generated on: ${new Date().toLocaleString()}</p>
+                  ${html}
+                </body>
+                </html>`;
+                downloadFile(report, 'similarity_report.html', 'text/html');
+            };
+        }
     }
 }
 
@@ -292,7 +265,10 @@ function initPDFChatbot() {
     const sendBtn = document.getElementById('pdf-send-btn');
     const loader = document.getElementById('pdf-loader');
     
+    if (!uploadArea || !fileInput || !chatMessages || !chatInput || !sendBtn) return;
+
     let pdfUploaded = false;
+    let tempPdfRef = null;
     let currentChatId = generateId();
 
     // File upload handlers
@@ -300,8 +276,10 @@ function initPDFChatbot() {
     
     fileInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
-        if (file) {
+        if (file && file.type === 'application/pdf') {
             await processPDF(file);
+        } else {
+            showNotification('Please select a PDF file', 'error');
         }
     });
 
@@ -320,33 +298,39 @@ function initPDFChatbot() {
         const file = e.dataTransfer.files[0];
         if (file && file.type === 'application/pdf') {
             await processPDF(file);
+        } else {
+            showNotification('Please drop a PDF file', 'error');
         }
     });
 
     async function processPDF(file) {
-        loader.classList.remove('hidden');
-        
+        showLoader('pdf-loader');
+        currentPDFFile = file;
         try {
-            // Simulate PDF processing
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            currentPDFContent = `PDF content from ${file.name} has been processed and is ready for questions.`;
-            pdfUploaded = true;
-            
-            // Update UI
-            uploadArea.innerHTML = `
+            const formData = new FormData();
+            formData.append('pdf', file);
+            const resp = await fetch('/api/rag_pdf/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await resp.json();
+            if (data.success) {
+                tempPdfRef = data.temp_pdf;
+                uploadArea.innerHTML = `
                 <i class="fas fa-check-circle" style="color: #10b981; font-size: 48px;"></i>
                 <p style="color: #10b981; font-weight: bold;">${file.name} uploaded successfully!</p>
                 <p>You can now ask questions about this document.</p>
-            `;
-            
-            addMessage('bot', `Great! I've processed "${file.name}". You can now ask me questions about this document.`);
-            
-            loader.classList.add('hidden');
-            
+                `;
+                pdfUploaded = true;
+                addMessage('bot', `Great! I've loaded "${file.name}". You can now ask me questions about this document.`);
+            } else {
+                throw new Error(data.error || 'Could not process PDF');
+            }
         } catch (error) {
-            loader.classList.add('hidden');
-            showNotification('Error processing PDF', 'error');
+            console.error('Error processing PDF:', error);
+            showNotification('Error processing PDF: ' + error.message, 'error');
+        } finally {
+            hideLoader('pdf-loader');
         }
     }
 
@@ -356,11 +340,11 @@ function initPDFChatbot() {
         if (e.key === 'Enter') sendMessage();
     });
 
-    function sendMessage() {
+    async function sendMessage() {
         const message = chatInput.value.trim();
         if (!message) return;
 
-        if (!pdfUploaded) {
+        if (!pdfUploaded || !tempPdfRef) {
             showNotification('Please upload a PDF first', 'warning');
             return;
         }
@@ -368,17 +352,35 @@ function initPDFChatbot() {
         addMessage('user', message);
         chatInput.value = '';
 
-        // Simulate AI response
-        setTimeout(() => {
-            const response = generatePDFResponse(message);
-            addMessage('bot', response);
-        }, 1000);
+        // Add typing indicator
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'message bot typing';
+        typingDiv.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+        chatMessages.appendChild(typingDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
 
-        // Save to history
-        if (!chatHistories.pdf[currentChatId]) {
-            chatHistories.pdf[currentChatId] = [];
+        try {
+            const formData = new FormData();
+            formData.append('temp_pdf', tempPdfRef);
+            formData.append('question', message);
+
+            const resp = await fetch('/api/rag_pdf/ask', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await resp.json();
+            typingDiv.remove();
+            if (data.success) {
+                addMessage('bot', data.answer);
+                saveToHistory('pdf', currentChatId, message, data.answer);
+            } else {
+                addMessage('bot', data.error || 'I apologize, but I encountered an error processing your question. Please try again.');
+            }
+        } catch (error) {
+            typingDiv.remove();
+            console.error('Error:', error);
+            addMessage('bot', 'I apologize, but I encountered an error processing your question. Please try again.');
         }
-        chatHistories.pdf[currentChatId].push({ user: message, bot: generatePDFResponse(message) });
     }
 
     function addMessage(sender, text) {
@@ -387,17 +389,6 @@ function initPDFChatbot() {
         messageDiv.innerHTML = `<p>${text}</p>`;
         chatMessages.appendChild(messageDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-
-    function generatePDFResponse(question) {
-        const responses = [
-            `Based on the PDF content, I can tell you that ${question.toLowerCase()} relates to several key points in the document.`,
-            `According to the document, the information about "${question}" can be found in multiple sections.`,
-            `The PDF discusses this topic extensively. Here's what I found relevant to your question about ${question.toLowerCase()}.`,
-            `Great question! The document provides detailed insights about this. Let me explain what I found.`,
-            `I've analyzed the PDF content and found relevant information about your query regarding ${question.toLowerCase()}.`
-        ];
-        return responses[Math.floor(Math.random() * responses.length)];
     }
 }
 
@@ -414,6 +405,8 @@ function initOCRExtractor() {
     const downloadBtn = document.getElementById('ocr-download-btn');
     const formatSelect = document.getElementById('ocr-format');
 
+    if (!uploadArea || !fileInput || !output) return;
+
     let extractedText = '';
 
     // File upload handlers
@@ -421,8 +414,10 @@ function initOCRExtractor() {
     
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
-        if (file) {
+        if (file && file.type.startsWith('image/')) {
             processImage(file);
+        } else {
+            showNotification('Please select an image file', 'error');
         }
     });
 
@@ -441,143 +436,84 @@ function initOCRExtractor() {
         const file = e.dataTransfer.files[0];
         if (file && file.type.startsWith('image/')) {
             processImage(file);
+        } else {
+            showNotification('Please drop an image file', 'error');
         }
     });
 
     async function processImage(file) {
         // Show preview
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            preview.src = e.target.result;
-            preview.classList.remove('hidden');
-        };
-        reader.readAsDataURL(file);
+        if (preview) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
 
-        loader.classList.remove('hidden');
+        showLoader('ocr-loader');
         
         try {
-            // Simulate OCR processing
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            
-            // Generate mock extracted text
-            extractedText = `This is sample extracted text from the uploaded image.
-            
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.
+            const formData = new FormData();
+            formData.append('image', file);
 
-Key points extracted:
-- Point 1: Sample text recognition
-- Point 2: High accuracy OCR
-- Point 3: Multiple format support
+            // ---- Updated: Use new API endpoint and JSON ----
+            const resp = await fetch('/api/ocr', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await resp.json();
 
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`;
-            
-            output.textContent = extractedText;
-            loader.classList.add('hidden');
-            
-            showNotification('Text extracted successfully!', 'success');
-            
+            if (data.success) {
+                extractedText = data.extracted_text;
+                output.textContent = extractedText;
+                showNotification('Text extracted successfully!', 'success');
+            } else {
+                throw new Error(data.error || 'No text could be extracted from the image');
+            }
         } catch (error) {
-            loader.classList.add('hidden');
-            showNotification('Error extracting text', 'error');
+            console.error('Error:', error);
+            showNotification('Error extracting text: ' + error.message, 'error');
+        } finally {
+            hideLoader('ocr-loader');
         }
     }
 
     // Copy functionality
-    copyBtn.addEventListener('click', () => {
-        if (extractedText) {
-            copyToClipboard(extractedText);
-        } else {
-            showNotification('No text to copy', 'warning');
-        }
-    });
-
-    // Download functionality
-    downloadBtn.addEventListener('click', () => {
-        if (!extractedText) {
-            showNotification('No text to download', 'warning');
-            return;
-        }
-
-        const format = formatSelect.value;
-        let filename, content, mimeType;
-
-        switch (format) {
-            case 'txt':
-                filename = 'extracted_text.txt';
-                content = extractedText;
-                mimeType = 'text/plain';
-                break;
-            case 'pdf':
-                filename = 'extracted_text.pdf';
-                content = generatePDF(extractedText);
-                mimeType = 'application/pdf';
-                break;
-            case 'docx':
-                filename = 'extracted_text.docx';
-                content = generateDocx(extractedText);
-                mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-                break;
-        }
-
-        downloadFile(content, filename, mimeType);
-    });
-
-    function generatePDF(text) {
-        // Simplified PDF generation (in real implementation, use a PDF library)
-        return `%PDF-1.4
-1 0 obj
-<<
-/Type /Catalog
-/Pages 2 0 R
->>
-endobj
-2 0 obj
-<<
-/Type /Pages
-/Kids [3 0 R]
-/Count 1
->>
-endobj
-3 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 4 0 R
->>
-endobj
-4 0 obj
-<<
-/Length ${text.length + 50}
->>
-stream
-BT
-/F1 12 Tf
-50 750 Td
-(${text.replace(/\n/g, ') Tj T* (')}) Tj
-ET
-endstream
-endobj
-xref
-0 5
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000212 00000 n 
-trailer
-<<
-/Size 5
-/Root 1 0 R
->>
-startxref
-${300 + text.length}
-%%EOF`;
+    if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+            if (extractedText) {
+                copyToClipboard(extractedText);
+            } else {
+                showNotification('No text to copy', 'warning');
+            }
+        });
     }
 
-    function generateDocx(text) {
-        // Simplified DOCX generation (in real implementation, use a DOCX library)
-        return text; // Placeholder
+    // Download functionality
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', async () => {
+            if (!extractedText) {
+                showNotification('No text to download', 'warning');
+                return;
+            }
+            const format = formatSelect ? formatSelect.value : 'txt';
+            // Download using API (so PDF/DOCX generated server-side)
+            try {
+                const resp = await fetch('/api/ocr/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: extractedText, format })
+                });
+                if (!resp.ok) throw new Error('Download failed');
+                const blob = await resp.blob();
+                let filename = 'extracted_text.' + format;
+                downloadFile(await blob.arrayBuffer(), filename, blob.type);
+            } catch (err) {
+                showNotification('Download failed: ' + err.message, 'error');
+            }
+        });
     }
 }
 
@@ -595,6 +531,8 @@ function initYouTubeAnalyzer() {
     const transcriptContent = document.getElementById('youtube-transcript-content');
     const chatTitle = document.getElementById('youtube-chat-title');
 
+    if (!chatMessages || !chatInput || !sendBtn) return;
+
     let currentChatId = generateId();
     let currentVideoTitle = 'New Chat';
 
@@ -604,32 +542,42 @@ function initYouTubeAnalyzer() {
         if (e.key === 'Enter') sendMessage();
     });
 
-    newChatBtn.addEventListener('click', () => {
-        currentChatId = generateId();
-        currentVideoTitle = 'New Chat';
-        chatTitle.textContent = currentVideoTitle;
-        chatMessages.innerHTML = `
-            <div class="message bot">
-                <p>Hi! Send me a YouTube URL to extract transcripts and start asking questions!</p>
-            </div>
-        `;
-        currentTranscript = '';
-        updateHistory();
-    });
+    if (newChatBtn) {
+        newChatBtn.addEventListener('click', () => {
+            currentChatId = generateId();
+            currentVideoTitle = 'New Chat';
+            if (chatTitle) chatTitle.textContent = currentVideoTitle;
+            chatMessages.innerHTML = `
+                <div class="message bot">
+                    <p>Hi! Send me a YouTube URL to extract transcripts and start asking questions!</p>
+                </div>
+            `;
+            currentTranscript = '';
+            currentYouTubeURL = '';
+            updateHistory('youtube');
+        });
+    }
 
-    showTranscriptBtn.addEventListener('click', () => {
-        if (currentTranscript) {
-            transcriptContent.innerHTML = `<pre>${currentTranscript}</pre>`;
-            transcriptModal.classList.remove('hidden');
-        } else {
-            showNotification('No transcript available. Please send a YouTube URL first.', 'warning');
+    if (showTranscriptBtn && transcriptModal) {
+        showTranscriptBtn.addEventListener('click', () => {
+            if (currentTranscript) {
+                if (transcriptContent) {
+                    transcriptContent.innerHTML = `<pre style="white-space: pre-wrap;">${currentTranscript}</pre>`;
+                }
+                transcriptModal.classList.remove('hidden');
+            } else {
+                showNotification('No transcript available. Please send a YouTube URL first.', 'warning');
+            }
+        });
+
+        // Modal close functionality
+        const closeBtn = transcriptModal.querySelector('.modal-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                transcriptModal.classList.add('hidden');
+            });
         }
-    });
-
-    // Modal close functionality
-    transcriptModal.querySelector('.modal-close').addEventListener('click', () => {
-        transcriptModal.classList.add('hidden');
-    });
+    }
 
     async function sendMessage() {
         const message = chatInput.value.trim();
@@ -642,12 +590,8 @@ function initYouTubeAnalyzer() {
         if (isYouTubeURL(message)) {
             await processYouTubeURL(message);
         } else {
-            // Generate response based on transcript
-            setTimeout(() => {
-                const response = generateYouTubeResponse(message);
-                addMessage('bot', response);
-                saveToHistory(message, response);
-            }, 1000);
+            // Ask question about transcript
+            await askQuestionAboutTranscript(message);
         }
     }
 
@@ -657,33 +601,61 @@ function initYouTubeAnalyzer() {
 
     async function processYouTubeURL(url) {
         addMessage('bot', 'Processing YouTube video... Please wait.');
-        
+        currentYouTubeURL = url;
         try {
-            // Simulate API call to extract transcript
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            
-            // Mock video data
-            const videoId = extractVideoId(url);
-            currentVideoTitle = `Video ${videoId}`;
-            chatTitle.textContent = currentVideoTitle;
-            
-            currentTranscript = `[00:00] Welcome to this video about artificial intelligence and machine learning.
-[00:15] Today we'll explore how AI is transforming various industries.
-[00:30] Machine learning algorithms are becoming increasingly sophisticated.
-[00:45] Deep learning neural networks can process complex patterns.
-[01:00] Natural language processing enables computers to understand human language.
-[01:15] Computer vision allows machines to interpret visual information.
-[01:30] These technologies are revolutionizing healthcare, finance, and education.
-[01:45] The future of AI holds tremendous potential for innovation.
-[02:00] Thank you for watching this introduction to AI and ML.`;
-            
-            addMessage('bot', `Great! I've extracted the transcript from "${currentVideoTitle}". You can now ask me questions about the video content. Click "Show Transcript" to view the full transcript.`);
-            
-            saveToHistory(url, 'Transcript extracted successfully');
-            updateHistory();
-            
+            const resp = await fetch('/api/youtube/extract', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            });
+            const data = await resp.json();
+            if (data.success) {
+                currentTranscript = data.transcript;
+                const videoId = extractVideoId(url);
+                currentVideoTitle = `YouTube Video ${videoId}`;
+                if (chatTitle) chatTitle.textContent = currentVideoTitle;
+                addMessage('bot', `Great! I've extracted the transcript from the YouTube video. You can now ask me questions about the video content. Click "Show Transcript" to view the full transcript.`);
+                saveToHistory('youtube', currentChatId, url, 'Transcript extracted successfully');
+                updateHistory('youtube');
+            } else {
+                throw new Error(data.error || 'Could not extract transcript from this video');
+            }
         } catch (error) {
-            addMessage('bot', 'Sorry, I encountered an error processing this YouTube URL. Please try again.');
+            console.error('Error:', error);
+            addMessage('bot', 'Sorry, I encountered an error processing this YouTube URL: ' + error.message);
+        }
+    }
+
+    async function askQuestionAboutTranscript(question) {
+        if (!currentTranscript) {
+            addMessage('bot', "Please send a YouTube URL first to extract the transcript, then I can answer questions about the video content.");
+            return;
+        }
+        // Add typing indicator
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'message bot typing';
+        typingDiv.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+        chatMessages.appendChild(typingDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        try {
+            const resp = await fetch('/api/youtube/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question })
+            });
+            const data = await resp.json();
+            typingDiv.remove();
+            if (data.success) {
+                addMessage('bot', data.answer);
+                saveToHistory('youtube', currentChatId, question, data.answer);
+            } else {
+                addMessage('bot', data.error || 'I apologize, but I encountered an error processing your question. Please try again.');
+            }
+        } catch (error) {
+            typingDiv.remove();
+            console.error('Error:', error);
+            addMessage('bot', 'I apologize, but I encountered an error processing your question. Please try again.');
         }
     }
 
@@ -698,47 +670,6 @@ function initYouTubeAnalyzer() {
         messageDiv.innerHTML = `<p>${text}</p>`;
         chatMessages.appendChild(messageDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-
-    function generateYouTubeResponse(question) {
-        if (!currentTranscript) {
-            return "Please send a YouTube URL first to extract the transcript, then I can answer questions about the video content.";
-        }
-
-        const responses = [
-            `Based on the video transcript, I can see that ${question.toLowerCase()} is discussed around the middle section of the video.`,
-            `According to the video content, this topic relates to the main themes covered in the presentation.`,
-            `The video mentions several key points about this. Let me highlight the relevant parts from the transcript.`,
-            `Great question! From what I can see in the transcript, the video covers this topic in detail.`,
-            `I found relevant information in the video transcript that addresses your question about ${question.toLowerCase()}.`
-        ];
-        return responses[Math.floor(Math.random() * responses.length)];
-    }
-
-    function saveToHistory(userMessage, botResponse) {
-        if (!chatHistories.youtube[currentChatId]) {
-            chatHistories.youtube[currentChatId] = {
-                title: currentVideoTitle,
-                messages: []
-            };
-        }
-        chatHistories.youtube[currentChatId].messages.push({
-            user: userMessage,
-            bot: botResponse,
-            timestamp: new Date()
-        });
-    }
-
-    function updateHistory() {
-        const historyHTML = Object.entries(chatHistories.youtube)
-            .map(([id, chat]) => `
-                <div class="history-item" onclick="loadChat('youtube', '${id}')">
-                    <h4>${chat.title}</h4>
-                    <p>${chat.messages.length} messages</p>
-                    <small>${formatTimestamp(new Date())}</small>
-                </div>
-            `).join('');
-        historyList.innerHTML = historyHTML;
     }
 }
 
@@ -757,6 +688,8 @@ function initWebURLAnalyzer() {
     const contentDisplay = document.getElementById('weburl-content-display');
     const downloadContentBtn = document.getElementById('weburl-download-content');
 
+    if (!chatMessages || !chatInput || !sendBtn) return;
+
     let currentChatId = generateId();
     let currentWebsiteTitle = 'New Chat';
 
@@ -766,47 +699,61 @@ function initWebURLAnalyzer() {
         if (e.key === 'Enter') sendMessage();
     });
 
-    newChatBtn.addEventListener('click', () => {
-        currentChatId = generateId();
-        currentWebsiteTitle = 'New Chat';
-        chatMessages.innerHTML = `
-            <div class="message bot">
-                <p>Please enter any website link for asking questions related to it.</p>
-            </div>
-        `;
-        currentWebsiteContent = '';
-        updateHistory();
-    });
+    if (newChatBtn) {
+        newChatBtn.addEventListener('click', () => {
+            currentChatId = generateId();
+            currentWebsiteTitle = 'New Chat';
+            chatMessages.innerHTML = `
+                <div class="message bot">
+                    <p>Please enter any website link for asking questions related to it.</p>
+                </div>
+            `;
+            currentWebsiteContent = '';
+            currentWebURL = '';
+            updateHistory('weburl');
+        });
+    }
 
-    showContentBtn.addEventListener('click', () => {
-        if (currentWebsiteContent) {
-            contentDisplay.innerHTML = `<pre style="white-space: pre-wrap;">${currentWebsiteContent}</pre>`;
-            contentModal.classList.remove('hidden');
-        } else {
-            showNotification('No website content available. Please analyze a URL first.', 'warning');
+    if (showContentBtn && contentModal) {
+        showContentBtn.addEventListener('click', () => {
+            if (currentWebsiteContent) {
+                if (contentDisplay) {
+                    contentDisplay.innerHTML = `<pre style="white-space: pre-wrap;">${currentWebsiteContent}</pre>`;
+                }
+                contentModal.classList.remove('hidden');
+            } else {
+                showNotification('No website content available. Please analyze a URL first.', 'warning');
+            }
+        });
+
+        // Modal close functionality
+        const closeBtn = contentModal.querySelector('.modal-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                contentModal.classList.add('hidden');
+            });
         }
-    });
+    }
 
-    themeToggleBtn.addEventListener('click', () => {
-        isDarkMode = !isDarkMode;
-        document.body.classList.toggle('dark-mode', isDarkMode);
-        themeToggleBtn.innerHTML = isDarkMode 
-            ? '<i class="fas fa-sun"></i> Light Mode'
-            : '<i class="fas fa-moon"></i> Dark Mode';
-    });
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('dark-mode', isDarkMode);
+            themeToggleBtn.innerHTML = isDarkMode 
+                ? '<i class="fas fa-sun"></i> Light Mode'
+                : '<i class="fas fa-moon"></i> Dark Mode';
+        });
+    }
 
-    downloadContentBtn.addEventListener('click', () => {
-        if (currentWebsiteContent) {
-            downloadFile(currentWebsiteContent, 'website_content.txt', 'text/plain');
-        } else {
-            showNotification('No content to download', 'warning');
-        }
-    });
-
-    // Modal close functionality
-    contentModal.querySelector('.modal-close').addEventListener('click', () => {
-        contentModal.classList.add('hidden');
-    });
+    if (downloadContentBtn) {
+        downloadContentBtn.addEventListener('click', () => {
+            if (currentWebsiteContent) {
+                downloadFile(currentWebsiteContent, 'website_content.txt', 'text/plain');
+            } else {
+                showNotification('No content to download', 'warning');
+            }
+        });
+    }
 
     async function sendMessage() {
         const message = chatInput.value.trim();
@@ -819,12 +766,8 @@ function initWebURLAnalyzer() {
         if (isValidURL(message)) {
             await processWebsiteURL(message);
         } else {
-            // Generate response based on website content
-            setTimeout(() => {
-                const response = generateWebsiteResponse(message);
-                addMessage('bot', response);
-                saveToHistory(message, response);
-            }, 1000);
+            // Ask question about website content
+            await askQuestionAboutWebsite(message);
         }
     }
 
@@ -839,59 +782,60 @@ function initWebURLAnalyzer() {
     
     async function processWebsiteURL(url) {
         addMessage('bot', 'Analyzing website content... Please wait.');
-        
+        currentWebURL = url;
         try {
-            // Simulate API call to extract website content
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            
-            // Mock website content
-            currentWebsiteTitle = getDomainFromURL(url);
-            
-            currentWebsiteContent = `Website: ${url}
-
-Title: Sample Website Analysis
-Meta Description: This is a sample website description for demonstration purposes.
-
-Content Summary:
-This website contains information about various topics including technology, business, and innovation. The main sections cover:
-
-1. Introduction to the topic
-2. Key concepts and definitions  
-3. Practical applications and examples
-4. Implementation strategies
-5. Future trends and developments
-
-Key Topics Identified:
-- Digital transformation
-- Artificial intelligence
-- Machine learning applications
-- Data analytics
-- Business process optimization
-
-Technical Details:
-- Website uses modern web technologies
-- Responsive design implementation
-- SEO optimized content structure
-- Fast loading performance
-- Mobile-friendly interface
-
-Content Analysis:
-The website provides comprehensive coverage of its main topics with well-structured information hierarchy. The content appears to be regularly updated and maintains high quality standards for readability and user engagement.
-
-Sentiment Analysis: Positive
-Reading Level: Professional/Academic
-Word Count: Approximately 2,500 words
-Last Updated: Recently
-
-This analysis was generated using AI-powered content extraction and natural language processing techniques.`;
-            
-            addMessage('bot', `I've successfully analyzed the website "${currentWebsiteTitle}". The content has been extracted and processed. You can now ask me questions about this website, or click "Website Content" to view the full extracted content.`);
-            
-            saveToHistory(url, 'Website content analyzed successfully');
-            updateHistory();
-            
+            const response = await fetch('/api/web_analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            });
+            const data = await response.json();
+            if (data.success) {
+                currentWebsiteContent = data.result.content || '';
+                currentWebsiteTitle = getDomainFromURL(url);
+                addMessage('bot', `I've successfully analyzed the website "${currentWebsiteTitle}". The content has been extracted and processed. You can now ask me questions about this website, or click "Website Content" to view the full extracted content.`);
+                saveToHistory('weburl', currentChatId, url, 'Website content analyzed successfully');
+                updateHistory('weburl');
+            } else {
+                throw new Error(data.error || 'Could not analyze website content');
+            }
         } catch (error) {
-            addMessage('bot', 'Sorry, I encountered an error analyzing this website. Please check the URL and try again.');
+            console.error('Error:', error);
+            addMessage('bot', 'Sorry, I encountered an error analyzing this website: ' + error.message);
+        }
+    }
+
+    async function askQuestionAboutWebsite(question) {
+        if (!currentWebsiteContent || !currentWebURL) {
+            addMessage('bot', "Please send a website URL first to analyze the content, then I can answer questions about it.");
+            return;
+        }
+
+        // Add typing indicator
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'message bot typing';
+        typingDiv.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+        chatMessages.appendChild(typingDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        try {
+            const response = await fetch('/api/web_analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: currentWebURL, question })
+            });
+            const data = await response.json();
+            typingDiv.remove();
+            if (data.success) {
+                addMessage('bot', data.result.answer || JSON.stringify(data.result));
+                saveToHistory('weburl', currentChatId, question, data.result.answer || JSON.stringify(data.result));
+            } else {
+                addMessage('bot', data.error || 'I apologize, but I encountered an error processing your question. Please try again.');
+            }
+        } catch (error) {
+            typingDiv.remove();
+            console.error('Error:', error);
+            addMessage('bot', 'I apologize, but I encountered an error processing your question. Please try again.');
         }
     }
 
@@ -899,7 +843,7 @@ This analysis was generated using AI-powered content extraction and natural lang
         try {
             const domain = new URL(url).hostname;
             return domain.replace('www.', '');
-        } catch (error) {
+        } catch {
             return 'Website';
         }
     }
@@ -911,354 +855,303 @@ This analysis was generated using AI-powered content extraction and natural lang
         chatMessages.appendChild(messageDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
-
-    function generateWebsiteResponse(question) {
-        if (!currentWebsiteContent) {
-            return "Please send a website URL first to analyze the content, then I can answer questions about it.";
-        }
-
-        const responses = [
-            `Based on the website analysis, I found that ${question.toLowerCase()} is covered in the main content sections.`,
-            `According to the extracted website content, this topic relates to several key points discussed on the page.`,
-            `The website provides detailed information about this. Let me reference the relevant sections from the content.`,
-            `Great question! From the website analysis, I can see this topic is addressed in multiple areas.`,
-            `I found relevant information in the website content that addresses your question about ${question.toLowerCase()}.`,
-            `The website's content suggests that this topic is important and covers various aspects of ${question.toLowerCase()}.`
-        ];
-        return responses[Math.floor(Math.random() * responses.length)];
-    }
-
-    function saveToHistory(userMessage, botResponse) {
-        if (!chatHistories.weburl[currentChatId]) {
-            chatHistories.weburl[currentChatId] = {
-                title: currentWebsiteTitle,
-                messages: []
-            };
-        }
-        chatHistories.weburl[currentChatId].messages.push({
-            user: userMessage,
-            bot: botResponse,
-            timestamp: new Date()
-        });
-    }
-
-    function updateHistory() {
-        const historyHTML = Object.entries(chatHistories.weburl)
-            .map(([id, chat]) => `
-                <div class="history-item" onclick="loadChat('weburl', '${id}')">
-                    <h4>${chat.title}</h4>
-                    <p>${chat.messages.length} messages</p>
-                    <small>${formatTimestamp(new Date())}</small>
-                </div>
-            `).join('');
-        historyList.innerHTML = historyHTML;
-    }
 }
 
 // ==========================================
 // CHAT HISTORY MANAGEMENT
 // ==========================================
-function loadChat(platform, chatId) {
-    const chat = chatHistories[platform][chatId];
+function saveToHistory(section, chatId, userMessage, botResponse) {
+    if (!chatHistories[section]) {
+        chatHistories[section] = {};
+    }
+    
+    if (!chatHistories[section][chatId]) {
+        chatHistories[section][chatId] = {
+            id: chatId,
+            title: generateChatTitle(userMessage),
+            messages: [],
+            timestamp: new Date()
+        };
+    }
+    
+    chatHistories[section][chatId].messages.push({
+        user: userMessage,
+        bot: botResponse,
+        timestamp: new Date()
+    });
+}
+
+function generateChatTitle(message) {
+    if (message.length > 50) {
+        return message.substring(0, 50) + '...';
+    }
+    return message;
+}
+
+function updateHistory(section) {
+    const historyList = document.getElementById(`${section}-history`);
+    if (!historyList || !chatHistories[section]) return;
+
+    const chats = Object.values(chatHistories[section]);
+    if (chats.length === 0) {
+        historyList.innerHTML = '<div class="history-empty">No chat history</div>';
+        return;
+    }
+
+    historyList.innerHTML = chats
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .map(chat => `
+            <div class="history-item" onclick="loadChat('${section}', '${chat.id}')">
+                <div class="history-title">${chat.title}</div>
+                <div class="history-timestamp">${formatTimestamp(new Date(chat.timestamp))}</div>
+            </div>
+        `)
+        .join('');
+}
+
+function loadChat(section, chatId) {
+    const chat = chatHistories[section]?.[chatId];
     if (!chat) return;
 
+    const chatMessages = document.getElementById(`${section}-chat-messages`);
+    if (!chatMessages) return;
+
     // Clear current messages
-    const messagesContainer = document.getElementById(`${platform}-chat-messages`);
-    messagesContainer.innerHTML = '';
+    chatMessages.innerHTML = '';
 
     // Load chat messages
     chat.messages.forEach(msg => {
-        const userDiv = document.createElement('div');
-        userDiv.className = 'message user';
-        userDiv.innerHTML = `<p>${msg.user}</p>`;
-        messagesContainer.appendChild(userDiv);
-
-        const botDiv = document.createElement('div');
-        botDiv.className = 'message bot';
-        botDiv.innerHTML = `<p>${msg.bot}</p>`;
-        messagesContainer.appendChild(botDiv);
+        addMessageToChat(section, 'user', msg.user);
+        addMessageToChat(section, 'bot', msg.bot);
     });
 
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-    // Update current chat info
-    if (platform === 'youtube') {
-        currentSection = 'youtube';
-        document.getElementById('youtube-chat-title').textContent = chat.title;
-    } else if (platform === 'weburl') {
-        currentSection = 'weburl';
-        currentWebsiteTitle = chat.title;
+    // Update current chat context
+    switch (section) {
+        case 'youtube':
+            currentYouTubeURL = chat.messages[0]?.user || '';
+            break;
+        case 'weburl':
+            currentWebURL = chat.messages[0]?.user || '';
+            break;
+        case 'pdf':
+            // PDF context would need to be handled differently
+            break;
     }
 }
 
+function addMessageToChat(section, sender, text) {
+    const chatMessages = document.getElementById(`${section}-chat-messages`);
+    if (!chatMessages) return;
+
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}`;
+    messageDiv.innerHTML = `<p>${text}</p>`;
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
 // ==========================================
-// THEME MANAGEMENT
+// INITIALIZATION
 // ==========================================
-function initThemeToggle() {
-    const themeToggle = document.getElementById('weburl-theme-toggle');
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize with home section
+    showSection('home');
+    
+    // Setup navigation
+    setupNavigation();
+    
+    // Setup theme toggle
+    setupThemeToggle();
+    
+    // Setup keyboard shortcuts
+    setupKeyboardShortcuts();
+    
+    // Initialize sections that need setup
+    initializeAllSections();
+});
+
+function setupNavigation() {
+    // Navigation menu handlers
+    document.querySelectorAll('[data-section]').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const sectionId = link.getAttribute('data-section');
+            showSection(sectionId);
+            
+            // Update active nav item
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            link.closest('.nav-item')?.classList.add('active');
+        });
+    });
+}
+
+function setupThemeToggle() {
+    const themeToggle = document.getElementById('theme-toggle');
     if (themeToggle) {
-        themeToggle.addEventListener('click', toggleTheme);
-    }
-}
-
-function toggleTheme() {
-    isDarkMode = !isDarkMode;
-    document.body.classList.toggle('dark-mode', isDarkMode);
-    
-    const themeButton = document.getElementById('weburl-theme-toggle');
-    if (themeButton) {
-        themeButton.innerHTML = isDarkMode 
-            ? '<i class="fas fa-sun"></i> Light Mode'
-            : '<i class="fas fa-moon"></i> Dark Mode';
-    }
-    
-    // Save theme preference
-    localStorage.setItem('darkMode', isDarkMode.toString());
-}
-
-function loadThemePreference() {
-    const savedTheme = localStorage.getItem('darkMode');
-    if (savedTheme === 'true') {
-        isDarkMode = true;
-        document.body.classList.add('dark-mode');
-        const themeButton = document.getElementById('weburl-theme-toggle');
-        if (themeButton) {
-            themeButton.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+        themeToggle.addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('dark-mode', isDarkMode);
+            
+            // Update all theme toggle buttons
+            document.querySelectorAll('[id*="theme-toggle"]').forEach(btn => {
+                btn.innerHTML = isDarkMode 
+                    ? '<i class="fas fa-sun"></i> Light Mode'
+                    : '<i class="fas fa-moon"></i> Dark Mode';
+            });
+            
+            // Save theme preference
+            try {
+                localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+            } catch (e) {
+                // localStorage not available
+            }
+        });
+        
+        // Load saved theme
+        try {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                isDarkMode = true;
+                document.body.classList.add('dark-mode');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+            }
+        } catch (e) {
+            // localStorage not available
         }
     }
 }
 
-// ==========================================
-// MODAL MANAGEMENT
-// ==========================================
-function initModals() {
-    // Close modals when clicking outside
-    document.querySelectorAll('.modal').forEach(modal => {
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.classList.add('hidden');
-            }
-        });
-    });
-
-    // Close modals with escape key
+function setupKeyboardShortcuts() {
     document.addEventListener('keydown', (e) => {
+        // Ctrl/Cmd + Enter to send message in active chat
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            const activeSection = document.querySelector('.section.active');
+            if (activeSection) {
+                const sendBtn = activeSection.querySelector('[id*="send-btn"]');
+                if (sendBtn && !sendBtn.disabled) {
+                    sendBtn.click();
+                }
+            }
+        }
+        
+        // Escape to close modals
         if (e.key === 'Escape') {
-            document.querySelectorAll('.modal').forEach(modal => {
+            document.querySelectorAll('.modal:not(.hidden)').forEach(modal => {
                 modal.classList.add('hidden');
             });
         }
     });
 }
 
-// ==========================================
-// SEARCH AND FILTER FUNCTIONALITY
-// ==========================================
-function initSearchFilters() {
-    // Add search functionality to history lists
-    const historyContainers = ['youtube-history', 'weburl-history'];
-    
-    historyContainers.forEach(containerId => {
-        const container = document.getElementById(containerId);
-        if (container) {
-            // Add search input
-            const searchInput = document.createElement('input');
-            searchInput.type = 'text';
-            searchInput.placeholder = 'Search chats...';
-            searchInput.className = 'search-input';
-            searchInput.addEventListener('input', (e) => filterHistory(containerId, e.target.value));
-            
-            const sidebar = container.parentElement;
-            sidebar.insertBefore(searchInput, container);
+function initializeAllSections() {
+    // Initialize all sections that might need setup
+    ['plagiarism', 'rag-pdf', 'ocr', 'youtube', 'weburl'].forEach(section => {
+        const sectionElement = document.getElementById(section);
+        if (sectionElement) {
+            initializeSection(section);
         }
     });
 }
 
-function filterHistory(containerId, searchTerm) {
-    const container = document.getElementById(containerId);
-    const historyItems = container.querySelectorAll('.history-item');
+// ==========================================
+// EXPORT/IMPORT FUNCTIONALITY
+// ==========================================
+function exportChatHistory(section) {
+    const history = chatHistories[section];
+    if (!history || Object.keys(history).length === 0) {
+        showNotification('No chat history to export', 'warning');
+        return;
+    }
     
-    historyItems.forEach(item => {
-        const title = item.querySelector('h4').textContent.toLowerCase();
-        const isVisible = title.includes(searchTerm.toLowerCase());
-        item.style.display = isVisible ? 'block' : 'none';
-    });
-}
-
-// ==========================================
-// EXPORT AND IMPORT FUNCTIONALITY
-// ==========================================
-function exportChatHistory(platform) {
-    const history = chatHistories[platform];
-    const exportData = {
-        platform: platform,
-        exportDate: new Date().toISOString(),
+    const data = {
+        section: section,
+        exported_at: new Date().toISOString(),
         chats: history
     };
     
-    const dataStr = JSON.stringify(exportData, null, 2);
-    downloadFile(dataStr, `${platform}_chat_history.json`, 'application/json');
+    const json = JSON.stringify(data, null, 2);
+    downloadFile(json, `${section}_chat_history.json`, 'application/json');
 }
 
-function importChatHistory(file, platform) {
+function importChatHistory(section, file) {
     const reader = new FileReader();
     reader.onload = (e) => {
         try {
-            const importData = JSON.parse(e.target.result);
-            if (importData.platform === platform) {
-                chatHistories[platform] = { ...chatHistories[platform], ...importData.chats };
+            const data = JSON.parse(e.target.result);
+            if (data.section === section && data.chats) {
+                chatHistories[section] = { ...chatHistories[section], ...data.chats };
+                updateHistory(section);
                 showNotification('Chat history imported successfully!', 'success');
-                
-                // Refresh history display
-                if (platform === 'youtube') {
-                    initYouTubeAnalyzer();
-                } else if (platform === 'weburl') {
-                    initWebURLAnalyzer();
-                }
             } else {
-                showNotification('Invalid file format for this platform', 'error');
+                throw new Error('Invalid file format');
             }
         } catch (error) {
-            showNotification('Error importing chat history', 'error');
+            showNotification('Error importing chat history: ' + error.message, 'error');
         }
     };
     reader.readAsText(file);
 }
 
 // ==========================================
-// KEYBOARD SHORTCUTS
+// SEARCH FUNCTIONALITY
 // ==========================================
-function initKeyboardShortcuts() {
-    document.addEventListener('keydown', (e) => {
-        // Ctrl/Cmd + K to focus search
-        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-            e.preventDefault();
-            const activeSearchInput = document.querySelector('.search-input:not([style*="display: none"])');
-            if (activeSearchInput) {
-                activeSearchInput.focus();
-            }
-        }
-        
-        // Ctrl/Cmd + Enter to send message in chat
-        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-            const activeInput = document.querySelector('input[type="text"]:focus');
-            if (activeInput) {
-                const sendButton = activeInput.parentElement.querySelector('button');
-                if (sendButton) {
-                    sendButton.click();
-                }
-            }
-        }
-        
-        // Ctrl/Cmd + N for new chat
-        if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-            e.preventDefault();
-            const newChatBtn = document.querySelector(`#${currentSection}-new-chat`);
-            if (newChatBtn) {
-                newChatBtn.click();
-            }
-        }
+function searchChatHistory(section, query) {
+    const historyList = document.getElementById(`${section}-history`);
+    if (!historyList || !chatHistories[section]) return;
+
+    const chats = Object.values(chatHistories[section]);
+    const filteredChats = chats.filter(chat => {
+        const titleMatch = chat.title.toLowerCase().includes(query.toLowerCase());
+        const messageMatch = chat.messages.some(msg => 
+            msg.user.toLowerCase().includes(query.toLowerCase()) ||
+            msg.bot.toLowerCase().includes(query.toLowerCase())
+        );
+        return titleMatch || messageMatch;
     });
-}
 
-// ==========================================
-// PERFORMANCE OPTIMIZATION
-// ==========================================
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-function throttle(func, limit) {
-    let inThrottle;
-    return function() {
-        const args = arguments;
-        const context = this;
-        if (!inThrottle) {
-            func.apply(context, args);
-            inThrottle = true;
-            setTimeout(() => inThrottle = false, limit);
-        }
-    };
-}
-
-// ==========================================
-// ERROR HANDLING AND LOGGING
-// ==========================================
-function handleError(error, context = 'Unknown') {
-    console.error(`Error in ${context}:`, error);
-    showNotification(`An error occurred in ${context}. Please try again.`, 'error');
-}
-
-function logActivity(action, details = {}) {
-    const logEntry = {
-        timestamp: new Date().toISOString(),
-        action: action,
-        section: currentSection,
-        details: details
-    };
-    console.log('Activity Log:', logEntry);
-}
-
-// ==========================================
-// INITIALIZATION AND CLEANUP
-// ==========================================
-function initializeApp() {
-    // Initialize all components
-    initModals();
-    initThemeToggle();
-    initSearchFilters();
-    initKeyboardShortcuts();
-    loadThemePreference();
-    
-    // Set initial section
-    showSection('home');
-    
-    // Log app initialization
-    logActivity('App Initialized');
-    
-    console.log('ShodhAI Platform loaded successfully!');
-}
-
-function cleanupResources() {
-    // Clear any intervals or timeouts
-    const timers = window.timers || [];
-    timers.forEach(timer => clearTimeout(timer));
-    
-    // Remove event listeners if needed
-    window.removeEventListener('beforeunload', cleanupResources);
-}
-
-// ==========================================
-// EVENT LISTENERS FOR INITIALIZATION
-// ==========================================
-document.addEventListener('DOMContentLoaded', initializeApp);
-window.addEventListener('beforeunload', cleanupResources);
-
-// ==========================================
-// UTILITY FUNCTIONS FOR ENHANCED FEATURES
-// ==========================================
-function validateFileSize(file, maxSizeMB = 10) {
-    const maxSize = maxSizeMB * 1024 * 1024; // Convert to bytes
-    if (file.size > maxSize) {
-        showNotification(`File size exceeds ${maxSizeMB}MB limit`, 'error');
-        return false;
+    if (filteredChats.length === 0) {
+        historyList.innerHTML = '<div class="history-empty">No matching chats found</div>';
+        return;
     }
-    return true;
+
+    historyList.innerHTML = filteredChats
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .map(chat => `
+            <div class="history-item" onclick="loadChat('${section}', '${chat.id}')">
+                <div class="history-title">${chat.title}</div>
+                <div class="history-timestamp">${formatTimestamp(new Date(chat.timestamp))}</div>
+            </div>
+        `)
+        .join('');
 }
 
-function validateFileType(file, allowedTypes) {
+// ==========================================
+// ERROR HANDLING & RECOVERY
+// ==========================================
+window.addEventListener('error', (event) => {
+    console.error('Global error:', event.error);
+    showNotification('An unexpected error occurred. Please refresh the page if issues persist.', 'error');
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+    console.error('Unhandled promise rejection:', event.reason);
+    showNotification('A network error occurred. Please check your connection and try again.', 'error');
+});
+
+// ==========================================
+// UTILITY FUNCTIONS FOR FILE HANDLING
+// ==========================================
+function validateFile(file, allowedTypes, maxSize = 10 * 1024 * 1024) { // 10MB default
     if (!allowedTypes.includes(file.type)) {
-        showNotification('Invalid file type', 'error');
-        return false;
+        throw new Error(`Invalid file type. Allowed types: ${allowedTypes.join(', ')}`);
     }
+    
+    if (file.size > maxSize) {
+        throw new Error(`File too large. Maximum size: ${Math.round(maxSize / 1024 / 1024)}MB`);
+    }
+    
     return true;
 }
 
@@ -1270,85 +1163,62 @@ function formatFileSize(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-function sanitizeHTML(str) {
-    const temp = document.createElement('div');
-    temp.textContent = str;
-    return temp.innerHTML;
-}
-
-function createProgressBar(containerId) {
-    const container = document.getElementById(containerId);
-    const progressBar = document.createElement('div');
-    progressBar.className = 'progress-bar';
-    progressBar.innerHTML = `
-        <div class="progress-fill" style="width: 0%"></div>
-        <span class="progress-text">0%</span>
-    `;
-    container.appendChild(progressBar);
-    return progressBar;
-}
-
-function updateProgressBar(progressBar, percentage) {
-    const fill = progressBar.querySelector('.progress-fill');
-    const text = progressBar.querySelector('.progress-text');
-    fill.style.width = percentage + '%';
-    text.textContent = Math.round(percentage) + '%';
+// ==========================================
+// PROGRESSIVE WEB APP FUNCTIONALITY
+// ==========================================
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+                console.log('SW registered: ', registration);
+            })
+            .catch(registrationError => {
+                console.log('SW registration failed: ', registrationError);
+            });
+    });
 }
 
 // ==========================================
-// ADVANCED CHAT FEATURES
+// ACCESSIBILITY FEATURES
 // ==========================================
-function addMessageWithTyping(sender, text, containerId) {
-    const container = document.getElementById(containerId);
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${sender}`;
+function setupAccessibility() {
+    // Focus management for modals
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                trapFocus(modal, e);
+            }
+        });
+    });
     
-    if (sender === 'bot') {
-        // Add typing indicator first
-        messageDiv.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
-        container.appendChild(messageDiv);
-        container.scrollTop = container.scrollHeight;
-        
-        // Replace with actual message after delay
-        setTimeout(() => {
-            messageDiv.innerHTML = `<p>${text}</p>`;
-        }, 1500);
-    } else {
-        messageDiv.innerHTML = `<p>${text}</p>`;
-        container.appendChild(messageDiv);
-        container.scrollTop = container.scrollHeight;
+    // Announce important messages to screen readers
+    const announcer = document.createElement('div');
+    announcer.setAttribute('aria-live', 'polite');
+    announcer.setAttribute('aria-atomic', 'true');
+    announcer.className = 'sr-only';
+    document.body.appendChild(announcer);
+    
+    window.announceToScreenReader = (message) => {
+        announcer.textContent = message;
+        setTimeout(() => announcer.textContent = '', 1000);
+    };
+}
+
+function trapFocus(element, event) {
+    const focusableElements = element.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+    
+    if (event.shiftKey && document.activeElement === firstElement) {
+        lastElement.focus();
+        event.preventDefault();
+    } else if (!event.shiftKey && document.activeElement === lastElement) {
+        firstElement.focus();
+        event.preventDefault();
     }
 }
 
-function addSuggestedQuestions(questions, containerId) {
-    const container = document.getElementById(containerId);
-    const suggestionsDiv = document.createElement('div');
-    suggestionsDiv.className = 'suggested-questions';
-    suggestionsDiv.innerHTML = `
-        <p>Suggested questions:</p>
-        ${questions.map(q => `<button class="suggestion-btn" onclick="askSuggestedQuestion('${q}', '${containerId}')">${q}</button>`).join('')}
-    `;
-    container.appendChild(suggestionsDiv);
-    container.scrollTop = container.scrollHeight;
-}
-
-function askSuggestedQuestion(question, containerId) {
-    const platform = containerId.split('-')[0];
-    const input = document.getElementById(`${platform}-input`);
-    input.value = question;
-    
-    // Trigger send
-    const sendBtn = document.getElementById(`${platform}-send-btn`);
-    sendBtn.click();
-    
-    // Remove suggestions
-    const suggestions = document.querySelector('.suggested-questions');
-    if (suggestions) {
-        suggestions.remove();
-    }
-}
-
-// Export functions for use in HTML
-window.showSection = showSection;
-window.loadChat = loadChat;
-window.askSuggestedQuestion = askSuggestedQuestion;
+// Initialize accessibility features
+document.addEventListener('DOMContentLoaded', setupAccessibility);
